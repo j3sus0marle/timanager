@@ -1,0 +1,8 @@
+# Configuración global
+.vscode/
+.idea/
+*.log
+.DS_Store
+
+# Evitar dependencias duplicadas (si tienes `node_modules` en la raíz)
+node_modules/
