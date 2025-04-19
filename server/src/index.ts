@@ -15,5 +15,5 @@ mongoose.connect(process.env.MONGO_URI || "")
 
 app.use("/api/items", itemRoutes);
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 6051;
 app.listen(PORT, () => console.log(`Servidor corriendo en el puerto ${PORT}`));

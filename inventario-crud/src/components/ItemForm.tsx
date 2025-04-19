@@ -7,25 +7,52 @@ interface Props {
 }
 
 const ItemForm: React.FC<Props> = ({ fetchItems }) => {
-  const [item, setItem] = useState<IItem>({ nombre: "", descripcion: "", cantidad: 0, precio: 0 });
+  const [item, setItem] = useState<IItem>({
+    descripcion: "",
+    marca: "",
+    modelo: "",
+    proveedor: "",
+    unidad: "",
+    cantidad: 0,
+    precioUnitario: 0,
+    categoria: [""],
+  });
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setItem({ ...item, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setItem({
+      ...item,
+      [name]: name === "cantidad" || name === "precioUnitario" ? Number(value) : value,
+    });
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    await axios.post("http://localhost:5000/api/items", item);
+    await axios.post("http://localhost:6051/api/items", item);
     fetchItems();
-    setItem({ nombre: "", descripcion: "", cantidad: 0, precio: 0 });
+    setItem({
+      descripcion: "",
+      marca: "",
+      modelo: "",
+      proveedor: "",
+      unidad: "",
+      cantidad: 0,
+      precioUnitario: 0,
+      categoria: [""],
+    });
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <input name="nombre" value={item.nombre} onChange={handleChange} placeholder="Nombre" />
-      <input name="cantidad" type="number" value={item.cantidad} onChange={handleChange} placeholder="Cantidad" />
-      <input name="precio" type="number" value={item.precio} onChange={handleChange} placeholder="Precio" />
-      <button type="submit">Agregar</button>
+    <form onSubmit={handleSubmit} className="mb-4 p-3 border rounded">
+      <input name="descripcion" value={item.descripcion} onChange={handleChange} placeholder="Descripción" className="form-control mb-2" />
+      <input name="marca" value={item.marca} onChange={handleChange} placeholder="Marca" className="form-control mb-2" />
+      <input name="modelo" value={item.modelo} onChange={handleChange} placeholder="Modelo" className="form-control mb-2" />
+      <input name="proveedor" value={item.proveedor} onChange={handleChange} placeholder="Proveedor" className="form-control mb-2" />
+      <input name="unidad" value={item.unidad} onChange={handleChange} placeholder="Unidad" className="form-control mb-2" />
+      <input name="cantidad" type="number" value={item.cantidad} onChange={handleChange} placeholder="Cantidad" className="form-control mb-2" />
+      <input name="precioUnitario" type="number" value={item.precioUnitario} onChange={handleChange} placeholder="Precio Unitario" className="form-control mb-2" />
+      <input name="categoria" value={item.categoria} onChange={handleChange} placeholder="Categoría" className="form-control mb-2" />
+      <button type="submit" className="btn btn-primary w-100">Agregar</button>
     </form>
   );
 };

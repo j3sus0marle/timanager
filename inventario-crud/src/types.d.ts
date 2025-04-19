@@ -1,8 +1,11 @@
 export interface IItem {
-    _id?: string;
-    nombre: string;
-    descripcion: string,
-    cantidad: number;
-    precio: number;
-  }
-  
+  _id?: string;
+  descripcion: string;
+  marca: string;
+  modelo: string;
+  proveedor: string;
+  unidad: string;
+  cantidad: number;
+  precioUnitario: number;
+  categoria: string[];
+}

@@ -6,17 +6,28 @@ import { Modal, Button, Table, Form } from "react-bootstrap";
 const ItemList: React.FC = () => {
   const [items, setItems] = useState<IItem[]>([]);
   const [filteredItems, setFilteredItems] = useState<IItem[]>([]);
-  const [newItem, setNewItem] = useState({ nombre: "", descripcion: "", cantidad: 0, precio: 0 });
+  const [newItem, setNewItem] = useState<IItem>({
+    descripcion: "",
+    marca: "",
+    modelo: "",
+    proveedor: "",
+    unidad: "PZA",
+    cantidad: 0,
+    precioUnitario: 0,
+    categoria: [],
+  });
+
   const [searchTerm, setSearchTerm] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [editItemId, setEditItemId] = useState<string | null>(null);
-  const [editedItem, setEditedItem] = useState<IItem | null>(null); // Estado para los cambios de edición
-  const urlSever="http://192.168.100.25:5000/api/items/"; 
+  const [editedItem, setEditedItem] = useState<IItem | null>(null);
+  const urlServer = "http://localhost:6051/api/items/";
+
   const fetchItems = async () => {
     try {
-      const res = await axios.get<IItem[]>(urlSever);
+      const res = await axios.get<IItem[]>(urlServer);
       setItems(res.data);
-      setFilteredItems(res.data); // Inicialmente se muestran todos los items
+      setFilteredItems(res.data);
     } catch (error) {
       console.error("Error al obtener los items:", error);
     }
@@ -24,7 +35,7 @@ const ItemList: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     try {
-      await axios.delete(urlSever+id);
+      await axios.delete(urlServer + id);
       fetchItems();
     } catch (error) {
       console.error("Error al eliminar el item:", error);
@@ -33,8 +44,17 @@ const ItemList: React.FC = () => {
 
   const handleAddItem = async () => {
     try {
-      await axios.post(urlSever, newItem);
-      setNewItem({ nombre: "", descripcion: "", cantidad: 0, precio: 0 });
+      await axios.post(urlServer, newItem);
+      setNewItem({
+        descripcion: "",
+        marca: "",
+        modelo: "",
+        proveedor: "",
+        unidad: "",
+        cantidad: 0,
+        precioUnitario: 0,
+        categoria: [""],
+      });
       setShowModal(false);
       fetchItems();
     } catch (error) {
@@ -46,16 +66,16 @@ const ItemList: React.FC = () => {
     const itemToEdit = items.find((item) => item._id === id);
     if (itemToEdit) {
       setEditItemId(id);
-      setEditedItem({ ...itemToEdit }); // Guardar el item para edición
+      setEditedItem({ ...itemToEdit });
     }
   };
 
   const handleSaveEditItem = async () => {
-    if (editedItem) {
+    if (editedItem && editItemId) {
       try {
-        await axios.put(urlSever+editItemId, editedItem);
+        await axios.put(urlServer + editItemId, editedItem);
         setEditItemId(null);
-        setEditedItem(null); // Limpiar los campos de edición
+        setEditedItem(null);
         fetchItems();
       } catch (error) {
         console.error("Error al modificar el item:", error);
@@ -70,8 +90,10 @@ const ItemList: React.FC = () => {
     } else {
       const filtered = items.filter(
         (item) =>
-          item.nombre.toLowerCase().includes(term.toLowerCase()) ||
-          item.descripcion.toLowerCase().includes(term.toLowerCase()) // Buscar también en descripción
+          item.descripcion.toLowerCase().includes(term.toLowerCase()) ||
+          item.marca.toLowerCase().includes(term.toLowerCase()) ||
+          item.modelo.toLowerCase().includes(term.toLowerCase()) ||
+          item.categoria.some((cat) => cat.toLowerCase().includes(term.toLowerCase())) // Aquí se busca en las categorías
       );
       setFilteredItems(filtered);
     }
@@ -82,13 +104,39 @@ const ItemList: React.FC = () => {
     fetchItems();
   }, []);
 
+  const renderEditableField = (
+    name: keyof IItem,
+    type: string = "text"
+  ) => (
+    <Form.Control
+      type={type}
+      value={(editedItem?.[name] ?? "") as string | number}
+      onChange={(e) =>
+        setEditedItem((prev) =>
+          prev
+            ? { ...prev, [name]: type === "number" ? Number(e.target.value) : e.target.value }
+            : prev
+        )
+      }
+    />
+  );
+
+  const handleCategoryChange = (category: string) => {
+    if (editedItem) {
+      const newCategories = editedItem.categoria.includes(category)
+        ? editedItem.categoria.filter((cat) => cat !== category)
+        : [...editedItem.categoria, category];
+      setEditedItem({ ...editedItem, categoria: newCategories });
+    }
+  };
+
   return (
     <div className="container mt-4">
-      {/* Fila de búsqueda y botón agregar */}
+      {/* Búsqueda y botón agregar */}
       <div className="d-flex justify-content-between mb-3">
         <Form.Control
           type="text"
-          placeholder="Buscar por nombre..."
+          placeholder="Buscar por descripción, marca o modelo..."
           value={searchTerm}
           onChange={(e) => handleSearch(e.target.value)}
           style={{ width: "70%" }}
@@ -102,68 +150,33 @@ const ItemList: React.FC = () => {
       <Table striped bordered hover>
         <thead>
           <tr>
-            <th>Nombre</th>
-            <th>Descripcion</th>
+            <th>Descripción</th>
+            <th>Marca</th>
+            <th>Modelo</th>
+            <th>Proveedor</th>
+            <th>Unidad</th>
             <th>Cantidad</th>
-            <th>Precio</th>
+            <th>Precio Unitario</th>
+            <th>Categoría</th>
             <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
           {filteredItems.map((item) => (
             <tr key={item._id}>
-              <td>
-                {editItemId === item._id ? (
-                  <Form.Control
-                    type="text"
-                    value={editedItem?.nombre || ""}
-                    onChange={(e) =>
-                      setEditedItem((prev) => prev ? { ...prev, nombre: e.target.value } : prev)
-                    }
-                  />
-                ) : (
-                  item.nombre
-                )}
-              </td>
-              <td>
-                {editItemId === item._id ? (
-                  <Form.Control
-                    type="text"
-                    value={editedItem?.descripcion || ""}
-                    onChange={(e) =>
-                      setEditedItem((prev) => prev ? { ...prev, descripcion: e.target.value } : prev)
-                    }
-                  />
-                ) : (
-                  item.descripcion
-                )}
-              </td>
-              <td>
-                {editItemId === item._id ? (
-                  <Form.Control
-                    type="number"
-                    value={editedItem?.cantidad || 0}
-                    onChange={(e) =>
-                      setEditedItem((prev) => prev ? { ...prev, cantidad: Number(e.target.value) } : prev)
-                    }
-                  />
-                ) : (
-                  item.cantidad
-                )}
-              </td>
-              <td>
-                {editItemId === item._id ? (
-                  <Form.Control
-                    type="number"
-                    value={editedItem?.precio || 0}
-                    onChange={(e) =>
-                      setEditedItem((prev) => prev ? { ...prev, precio: Number(e.target.value) } : prev)
-                    }
-                  />
-                ) : (
-                  item.precio
-                )}
-              </td>
+              {["descripcion", "marca", "modelo", "proveedor", "unidad", "cantidad", "precioUnitario", "categoria"].map((field) => (
+                <td key={field}>
+                  {editItemId === item._id ? (
+                    renderEditableField(field as keyof IItem, field === "cantidad" || field === "precioUnitario" ? "number" : "text")
+                  ) : (
+                    field === "categoria" ? (
+                      item.categoria.join(", ")
+                    ) : (
+                      item[field as keyof IItem] // Aquí usamos acceso explícito
+                    )
+                  )}
+                </td>
+              ))}
               <td>
                 {editItemId === item._id ? (
                   <Button variant="primary" onClick={handleSaveEditItem}>
@@ -171,17 +184,10 @@ const ItemList: React.FC = () => {
                   </Button>
                 ) : (
                   <>
-                    <Button
-                      variant="warning"
-                      className="me-2"
-                      onClick={() => handleEditItem(item._id!)}
-                    >
+                    <Button variant="warning" className="me-2" onClick={() => handleEditItem(item._id!)}>
                       Editar
                     </Button>
-                    <Button
-                      variant="danger"
-                      onClick={() => handleDelete(item._id!)}
-                    >
+                    <Button variant="danger" onClick={() => handleDelete(item._id!)}>
                       Eliminar
                     </Button>
                   </>
@@ -192,54 +198,92 @@ const ItemList: React.FC = () => {
         </tbody>
       </Table>
 
-      {/* Modal para agregar items */}
+      {/* Modal Agregar */}
       <Modal show={showModal} onHide={() => setShowModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Agregar Nuevo Item</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-            Nombre
-          <Form.Control
-            className="mb-2"
-            type="text"
-            placeholder="Nombre"
-            value={newItem.nombre}
-            onChange={(e) => setNewItem({ ...newItem, nombre: e.target.value })}
-          />
-            Descripcion
-          <Form.Control
-            className="mb-2"
-            type="text"
-            placeholder="Descripcion"
-            value={newItem.descripcion}
-            onChange={(e) => setNewItem({ ...newItem, descripcion: e.target.value })}
-          />
-            Cantidad
-          <Form.Control
-            className="mb-2"
-            type="number"
-            placeholder="Cantidad"
-            value={newItem.cantidad}
-            onChange={(e) =>
-              setNewItem({ ...newItem, cantidad: Number(e.target.value) })
-            }
-          />
-            Precio
-          <Form.Control
-            type="number"
-            placeholder="Precio"
-            value={newItem.precio}
-            onChange={(e) =>
-              setNewItem({ ...newItem, precio: Number(e.target.value) })
-            }
-          />
+          {[
+            { field: "descripcion", label: "Descripción", placeholder: "Ej. TUBERÍA 3/4" },
+            { field: "marca", label: "Marca", placeholder: "Ej. TRUPER" },
+            { field: "modelo", label: "Modelo", placeholder: "Ej. XY123" },
+            { field: "proveedor", label: "Proveedor", placeholder: "Ej. FERREMATERIALES" },
+          ].map(({ field, label, placeholder }) => (
+            <Form.Group className="mb-2" key={field}>
+              <Form.Label>{label}</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder={placeholder}
+                value={(newItem as any)[field]}
+                onChange={(e) =>
+                  setNewItem((prev) => ({
+                    ...prev,
+                    [field]: e.target.value,
+                  }))
+                }
+              />
+            </Form.Group>
+          ))}
+
+          {/* Unidad (Select) */}
+          <Form.Group className="mb-2">
+            <Form.Label>Unidad</Form.Label>
+            <Form.Select
+              value={newItem.unidad}
+              onChange={(e) => setNewItem((prev) => ({ ...prev, unidad: e.target.value as "PZA" | "MTS" }))}
+            >
+              <option value="PZA">PZA</option>
+              <option value="MTS">MTS</option>
+            </Form.Select>
+          </Form.Group>
+
+          {/* Cantidad */}
+          <Form.Group className="mb-2">
+            <Form.Label>Cantidad</Form.Label>
+            <Form.Control
+              type="number"
+              placeholder="Ej. 15"
+              value={newItem.cantidad}
+              onChange={(e) => setNewItem((prev) => ({ ...prev, cantidad: Number(e.target.value) }))}
+            />
+          </Form.Group>
+
+          {/* Precio Unitario */}
+          <Form.Group className="mb-2">
+            <Form.Label>Precio Unitario</Form.Label>
+            <Form.Control
+              type="number"
+              placeholder="Ej. 120.50"
+              value={newItem.precioUnitario}
+              onChange={(e) => setNewItem((prev) => ({ ...prev, precioUnitario: Number(e.target.value) }))}
+            />
+          </Form.Group>
+
+          {/* Categorías (Checkboxes) */}
+          <Form.Group>
+            <Form.Label>Categorías</Form.Label>
+            <div className="mb-2">
+              {["COMPUTO", "ALARMA", "CANALIZACION", "CONTROL ACCESO"].map((cat) => (
+                <Form.Check
+                  key={cat}
+                  inline
+                  type="checkbox"
+                  label={cat}
+                  value={cat}
+                  checked={editedItem?.categoria.includes(cat)}
+                  onChange={() => handleCategoryChange(cat)}
+                />
+              ))}
+            </div>
+          </Form.Group>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowModal(false)}>
             Cancelar
           </Button>
-          <Button variant="success" onClick={handleAddItem}>
-            Agregar
+          <Button variant="success" onClick={handleSaveEditItem}>
+            Guardar
           </Button>
         </Modal.Footer>
       </Modal>
