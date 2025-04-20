@@ -9,3 +9,10 @@ export interface IItem {
   precioUnitario: number;
   categoria: string[];
 }
+
+export interface Vendedor {
+  _id?: string;
+  nombre: string;
+  correo: string;
+  telefono: string;
+}

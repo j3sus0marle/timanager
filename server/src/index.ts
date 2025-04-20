@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
 import itemRoutes from "./routes/itemRoutes";
+import vendedoresRoutes from './routes/vendedores'
 
 dotenv.config();
 const app: Application = express();
@@ -14,6 +15,7 @@ mongoose.connect(process.env.MONGO_URI || "")
   .catch((err) => console.error("Error al conectar a MongoDB:", err));
 
 app.use("/api/items", itemRoutes);
+app.use('/api/vendedores', vendedoresRoutes);
 
 const PORT = process.env.PORT || 6051;
 app.listen(PORT, () => console.log(`Servidor corriendo en el puerto ${PORT}`));

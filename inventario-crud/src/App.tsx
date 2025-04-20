@@ -9,6 +9,7 @@ import Clientes from "./pages/Clientes";
 import Vendedores from "./pages/Vendedores";
 import Productos from "./pages/Productos";
 
+
 function App() {
   return (
     <Router>

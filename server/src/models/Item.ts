@@ -8,7 +8,7 @@ export interface IItem extends Document {
   unidad: "PZA" | "MTS";
   cantidad: number;
   precioUnitario: number;
-  categoria: string[]; // <-- CAMBIO AQUÍ
+  categoria: string[];
 }
 
 
