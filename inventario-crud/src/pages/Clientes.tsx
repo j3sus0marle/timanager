@@ -1,7 +1,13 @@
 // src/pages/Clientes.tsx
+import ClientesList from '../components/ClienteList'
+
 const Clientes: React.FC = () => {
-    return <h2>Clientes</h2>;
-  };
+  return (
+    <div>
+    <h2>Clientes</h2>
+    <ClientesList/>
+    </div>);
+};
   
   export default Clientes;
   
