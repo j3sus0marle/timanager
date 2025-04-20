@@ -1,0 +1,10 @@
+/* src/layout/MainLayout.css */
+.nav-link:hover {
+    background-color: #343a40;
+    border-radius: 5px;
+  }
+  .nav-link.fw-bold {
+    background-color: #495057;
+    border-radius: 5px;
+  }
+  

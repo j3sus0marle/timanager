@@ -42,25 +42,7 @@ const ItemList: React.FC = () => {
     }
   };
 
-  const handleAddItem = async () => {
-    try {
-      await axios.post(urlServer, newItem);
-      setNewItem({
-        descripcion: "",
-        marca: "",
-        modelo: "",
-        proveedor: "",
-        unidad: "",
-        cantidad: 0,
-        precioUnitario: 0,
-        categoria: [""],
-      });
-      setShowModal(false);
-      fetchItems();
-    } catch (error) {
-      console.error("Error al agregar el item:", error);
-    }
-  };
+
 
   const handleEditItem = (id: string) => {
     const itemToEdit = items.find((item) => item._id === id);

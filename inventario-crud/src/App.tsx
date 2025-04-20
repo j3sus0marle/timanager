@@ -1,11 +1,30 @@
-import ItemList from "./components/ItemList";
+// src/App.tsx
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import MainLayout from "./layout/MainLayout";
+import Dashboard from "./pages/Dashboard";
+import Proyectos from "./pages/Proyectos";
+import Cotizaciones from "./pages/Cotizaciones";
+import CotizacionesElectricas from "./pages/CotizacionesElectricas";
+import Clientes from "./pages/Clientes";
+import Vendedores from "./pages/Vendedores";
+import Productos from "./pages/Productos";
 
 function App() {
   return (
-    <div className="container-fluid mt-4">
-      <h1 className="text-center mb-4">Gestor de Inventario</h1>
-      <ItemList />
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<MainLayout />}>
+          <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="proyectos" element={<Proyectos />} />
+          <Route path="cotizaciones" element={<Cotizaciones />} />
+          <Route path="cotizaciones-electricas" element={<CotizacionesElectricas />} />
+          <Route path="clientes" element={<Clientes />} />
+          <Route path="vendedores" element={<Vendedores />} />
+          <Route path="productos" element={<Productos />} />
+        </Route>
+      </Routes>
+    </Router>
   );
 }
 
