@@ -16,7 +16,7 @@ const VendedorList: React.FC = () => {
   const [editVendedorId, setEditVendedorId] = useState<string | null>(null);
   const [editedVendedor, setEditedVendedor] = useState<Vendedor | null>(null);
 
-  const url = "http://localhost:6051/api/vendedores/";
+  const url = "http://192.168.100.25:6051/api/vendedores/";
 
   const fetchVendedores = async () => {
     try {

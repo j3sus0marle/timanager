@@ -28,7 +28,7 @@ const ItemForm: React.FC<Props> = ({ fetchItems }) => {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    await axios.post("http://localhost:6051/api/items", item);
+    await axios.post("http://192.168.100.25:6051/api/items", item);
     fetchItems();
     setItem({
       descripcion: "",

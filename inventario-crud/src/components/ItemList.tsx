@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { IItem } from "../types";
-import { Modal, Button, Table, Form } from "react-bootstrap";
+import { Modal, Button, Table, Form, Row, Col } from "react-bootstrap";
+
 
 const ItemList: React.FC = () => {
   const [items, setItems] = useState<IItem[]>([]);
@@ -21,7 +22,7 @@ const ItemList: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [editItemId, setEditItemId] = useState<string | null>(null);
   const [editedItem, setEditedItem] = useState<IItem | null>(null);
-  const urlServer = "http://localhost:6051/api/items/";
+  const urlServer = "http://192.168.100.25:6051/api/items/";
 
   const fetchItems = async () => {
     try {
@@ -181,94 +182,103 @@ const ItemList: React.FC = () => {
       </Table>
 
       {/* Modal Agregar */}
-      <Modal show={showModal} onHide={() => setShowModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Agregar Nuevo Item</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {[
-            { field: "descripcion", label: "Descripción", placeholder: "Ej. TUBERÍA 3/4" },
-            { field: "marca", label: "Marca", placeholder: "Ej. TRUPER" },
-            { field: "modelo", label: "Modelo", placeholder: "Ej. XY123" },
-            { field: "proveedor", label: "Proveedor", placeholder: "Ej. FERREMATERIALES" },
-          ].map(({ field, label, placeholder }) => (
-            <Form.Group className="mb-2" key={field}>
-              <Form.Label>{label}</Form.Label>
-              <Form.Control
-                type="text"
-                placeholder={placeholder}
-                value={(newItem as any)[field]}
-                onChange={(e) =>
-                  setNewItem((prev) => ({
-                    ...prev,
-                    [field]: e.target.value,
-                  }))
-                }
-              />
-            </Form.Group>
-          ))}
+      <Modal show={showModal} onHide={() => setShowModal(false)} size="lg" centered>
+  <Modal.Header closeButton className="bg-light border-bottom">
+    <Modal.Title className="">Agregar Nuevo Ítem</Modal.Title>
+  </Modal.Header>
 
-          {/* Unidad (Select) */}
-          <Form.Group className="mb-2">
-            <Form.Label>Unidad</Form.Label>
-            <Form.Select
-              value={newItem.unidad}
-              onChange={(e) => setNewItem((prev) => ({ ...prev, unidad: e.target.value as "PZA" | "MTS" }))}
-            >
-              <option value="PZA">PZA</option>
-              <option value="MTS">MTS</option>
-            </Form.Select>
-          </Form.Group>
+  <Modal.Body className="px-4 py-3">
+    <Row>
+      {[
+        { field: "descripcion", label: "Descripción", placeholder: "Ej. TUBERÍA 3/4" },
+        { field: "marca", label: "Marca", placeholder: "Ej. TRUPER" },
+        { field: "modelo", label: "Modelo", placeholder: "Ej. XY123" },
+        { field: "proveedor", label: "Proveedor", placeholder: "Ej. FERREMATERIALES" },
+      ].map(({ field, label, placeholder }) => (
+        <Col md={6} key={field} className="mb-3">
+          <Form.Label className="fw-semibold">{label}</Form.Label>
+          <Form.Control
+            type="text"
+            placeholder={placeholder}
+            value={(newItem as any)[field]}
+            onChange={(e) =>
+              setNewItem((prev) => ({
+                ...prev,
+                [field]: e.target.value,
+              }))
+            }
+          />
+        </Col>
+      ))}
 
-          {/* Cantidad */}
-          <Form.Group className="mb-2">
-            <Form.Label>Cantidad</Form.Label>
-            <Form.Control
-              type="number"
-              placeholder="Ej. 15"
-              value={newItem.cantidad}
-              onChange={(e) => setNewItem((prev) => ({ ...prev, cantidad: Number(e.target.value) }))}
+      <Col md={4} className="mb-3">
+        <Form.Label className="fw-semibold">Unidad</Form.Label>
+        <Form.Select
+          value={newItem.unidad}
+          onChange={(e) =>
+            setNewItem((prev) => ({ ...prev, unidad: e.target.value as "PZA" | "MTS" }))
+          }
+        >
+          <option value="PZA">PZA</option>
+          <option value="MTS">MTS</option>
+        </Form.Select>
+      </Col>
+
+      <Col md={4} className="mb-3">
+        <Form.Label className="fw-semibold">Cantidad</Form.Label>
+        <Form.Control
+          type="number"
+          placeholder="Ej. 15"
+          value={newItem.cantidad}
+          onChange={(e) =>
+            setNewItem((prev) => ({ ...prev, cantidad: Number(e.target.value) }))
+          }
+        />
+      </Col>
+
+      <Col md={4} className="mb-3">
+        <Form.Label className="fw-semibold">Precio Unitario</Form.Label>
+        <Form.Control
+          type="number"
+          placeholder="Ej. 120.50"
+          value={newItem.precioUnitario}
+          onChange={(e) =>
+            setNewItem((prev) => ({ ...prev, precioUnitario: Number(e.target.value) }))
+          }
+        />
+      </Col>
+    </Row>
+
+    {/* Categorías */}
+    <Form.Group className="mb-2">
+      <Form.Label className="fw-semibold">Categorías</Form.Label>
+      <Row className="px-2">
+        {["COMPUTO", "ALARMA", "CANALIZACION", "CONTROL ACCESO"].map((cat) => (
+          <Col xs={6} md={3} key={cat}>
+            <Form.Check
+              type="checkbox"
+              label={cat}
+              value={cat}
+              checked={editedItem?.categoria.includes(cat)}
+              onChange={() => handleCategoryChange(cat)}
             />
-          </Form.Group>
+          </Col>
+        ))}
+      </Row>
+    </Form.Group>
+  </Modal.Body>
 
-          {/* Precio Unitario */}
-          <Form.Group className="mb-2">
-            <Form.Label>Precio Unitario</Form.Label>
-            <Form.Control
-              type="number"
-              placeholder="Ej. 120.50"
-              value={newItem.precioUnitario}
-              onChange={(e) => setNewItem((prev) => ({ ...prev, precioUnitario: Number(e.target.value) }))}
-            />
-          </Form.Group>
+  <Modal.Footer className="bg-light border-top">
+    <Button variant="outline-secondary" onClick={() => setShowModal(false)}>
+      Cancelar
+    </Button>
+    <Button variant="success" onClick={handleSaveEditItem}>
+      <i className="bi bi-check-circle me-2"></i>
+      Guardar
+    </Button>
+  </Modal.Footer>
+</Modal>
 
-          {/* Categorías (Checkboxes) */}
-          <Form.Group>
-            <Form.Label>Categorías</Form.Label>
-            <div className="mb-2">
-              {["COMPUTO", "ALARMA", "CANALIZACION", "CONTROL ACCESO"].map((cat) => (
-                <Form.Check
-                  key={cat}
-                  inline
-                  type="checkbox"
-                  label={cat}
-                  value={cat}
-                  checked={editedItem?.categoria.includes(cat)}
-                  onChange={() => handleCategoryChange(cat)}
-                />
-              ))}
-            </div>
-          </Form.Group>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>
-            Cancelar
-          </Button>
-          <Button variant="success" onClick={handleSaveEditItem}>
-            Guardar
-          </Button>
-        </Modal.Footer>
-      </Modal>
     </div>
   );
 };

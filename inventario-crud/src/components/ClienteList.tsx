@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { Button, Table, Modal, Form } from "react-bootstrap";
+import { Button, Table, Modal, Form, Col, Row } from "react-bootstrap";
 
 interface Persona {
   nombre: string;
@@ -17,12 +17,9 @@ interface Cliente {
 
 const ClienteList: React.FC = () => {
   const [clientes, setClientes] = useState<Cliente[]>([]);
-  const [showModal, setShowModal] = useState(false);
-  const [newCliente, setNewCliente] = useState<Cliente>({ compania: "", direccion: "", personas: [] });
-  const [editClienteId, setEditClienteId] = useState<string | null>(null);
   const [editedCliente, setEditedCliente] = useState<Cliente | null>(null);
 
-  const url = "http://localhost:6051/api/clientes/";
+  const url = "http://192.168.100.25:6051/api/clientes/";
 
   const fetchClientes = async () => {
     try {
@@ -37,14 +34,28 @@ const ClienteList: React.FC = () => {
     fetchClientes();
   }, []);
 
-  const handleAddCliente = async () => {
+  const handleEdit = (id: string) => {
+    const cliente = clientes.find((c) => c._id === id);
+    if (cliente) {
+      setEditedCliente({ ...cliente });
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editedCliente) return;
+
     try {
-      await axios.post(url, newCliente);
-      setNewCliente({ compania: "", direccion: "", personas: [] });
-      setShowModal(false);
+      if (editedCliente._id) {
+        // Editar cliente existente
+        await axios.put(url + editedCliente._id, editedCliente);
+      } else {
+        // Agregar nuevo cliente
+        await axios.post(url, editedCliente);
+      }
+      setEditedCliente(null);
       fetchClientes();
     } catch (error) {
-      console.error("Error al agregar cliente", error);
+      console.error("Error al guardar cliente", error);
     }
   };
 
@@ -54,27 +65,6 @@ const ClienteList: React.FC = () => {
       fetchClientes();
     } catch (error) {
       console.error("Error al eliminar cliente", error);
-    }
-  };
-
-  const handleEdit = (id: string) => {
-    const cliente = clientes.find((c) => c._id === id);
-    if (cliente) {
-      setEditClienteId(id);
-      setEditedCliente({ ...cliente });
-    }
-  };
-
-  const handleSaveEdit = async () => {
-    if (editClienteId && editedCliente) {
-      try {
-        await axios.put(url + editClienteId, editedCliente);
-        setEditClienteId(null);
-        setEditedCliente(null);
-        fetchClientes();
-      } catch (error) {
-        console.error("Error al editar cliente", error);
-      }
     }
   };
 
@@ -106,7 +96,9 @@ const ClienteList: React.FC = () => {
   return (
     <div className="container mt-4">
       <div className="d-flex justify-content-between mb-3">
-        <Button onClick={() => setShowModal(true)}>Agregar Cliente</Button>
+        <Button onClick={() => setEditedCliente({ compania: "", direccion: "", personas: [] })}>
+          Agregar Cliente
+        </Button>
       </div>
 
       <Table striped bordered hover>
@@ -143,99 +135,121 @@ const ClienteList: React.FC = () => {
         </tbody>
       </Table>
 
-      {/* Modal de edición */}
-      <Modal show={!!editedCliente} onHide={() => setEditedCliente(null)} size="lg">
-        <Modal.Header closeButton>
-          <Modal.Title>Editar Cliente</Modal.Title>
+      {/* Modal único para agregar y editar */}
+      <Modal show={!!editedCliente} onHide={() => setEditedCliente(null)} size="lg" centered>
+        <Modal.Header closeButton className="bg-light border-bottom">
+          <Modal.Title className="">
+            {editedCliente?._id ? "Editar Cliente" : "Agregar Cliente"}
+          </Modal.Title>
         </Modal.Header>
-        <Modal.Body>
+
+        <Modal.Body className="px-4 py-3">
           {editedCliente && (
             <>
-              <Form.Group className="mb-2">
-                <Form.Label>Compañía</Form.Label>
-                <Form.Control
-                  value={editedCliente.compania}
-                  onChange={(e) => setEditedCliente({ ...editedCliente, compania: e.target.value })}
-                />
-              </Form.Group>
-              <Form.Group className="mb-2">
-                <Form.Label>Dirección</Form.Label>
-                <Form.Control
-                  value={editedCliente.direccion}
-                  onChange={(e) => setEditedCliente({ ...editedCliente, direccion: e.target.value })}
-                />
-              </Form.Group>
-              <hr />
-              <h5>Contacto</h5>
-              {editedCliente.personas.map((p, index) => (
-                <div key={index} className="mb-3 border rounded p-2">
-                  <Form.Group className="mb-1">
-                    <Form.Label>Nombre</Form.Label>
+              {/* Datos de la compañía */}
+              <Row className="mb-3">
+                <Col md={6}>
+                  <Form.Group>
+                    <Form.Label className="fw-semibold">Compañía</Form.Label>
                     <Form.Control
-                      value={p.nombre}
-                      onChange={(e) => handlePersonaChange(index, "nombre", e.target.value)}
+                      value={editedCliente.compania}
+                      onChange={(e) =>
+                        setEditedCliente({ ...editedCliente, compania: e.target.value })
+                      }
                     />
                   </Form.Group>
-                  <Form.Group className="mb-1">
-                    <Form.Label>Correo</Form.Label>
+                </Col>
+                <Col md={6}>
+                  <Form.Group>
+                    <Form.Label className="fw-semibold">Dirección</Form.Label>
                     <Form.Control
-                      value={p.correo}
-                      onChange={(e) => handlePersonaChange(index, "correo", e.target.value)}
+                      value={editedCliente.direccion}
+                      onChange={(e) =>
+                        setEditedCliente({ ...editedCliente, direccion: e.target.value })
+                      }
                     />
                   </Form.Group>
-                  <Form.Group className="mb-1">
-                    <Form.Label>Teléfono</Form.Label>
-                    <Form.Control
-                      value={p.telefono}
-                      onChange={(e) => handlePersonaChange(index, "telefono", e.target.value)}
-                    />
-                  </Form.Group>
-                  <Button variant="danger" size="sm" onClick={() => handleRemovePersona(index)}>
-                    Eliminar Persona
-                  </Button>
-                </div>
-              ))}
-              <Button variant="secondary" onClick={handleAddPersona}>Agregar Persona</Button>
+                </Col>
+              </Row>
+
+              {/* Contactos */}
+              <div className="border-top pt-3 mt-3">
+                <h5 className="fw-bold text-secondary mb-3">
+                  <i className="bi bi-person-lines-fill me-2"></i>Contacto
+                </h5>
+
+                {editedCliente.personas.map((p, index) => (
+                  <div
+                    key={index}
+                    className="mb-4 p-3 border rounded bg-light position-relative"
+                  >
+                    <Row>
+                      <Col md={4}>
+                        <Form.Group>
+                          <Form.Label className="fw-semibold">Nombre</Form.Label>
+                          <Form.Control
+                            value={p.nombre}
+                            onChange={(e) =>
+                              handlePersonaChange(index, "nombre", e.target.value)
+                            }
+                          />
+                        </Form.Group>
+                      </Col>
+                      <Col md={4}>
+                        <Form.Group>
+                          <Form.Label className="fw-semibold">Correo</Form.Label>
+                          <Form.Control
+                            type="email"
+                            value={p.correo}
+                            onChange={(e) =>
+                              handlePersonaChange(index, "correo", e.target.value)
+                            }
+                          />
+                        </Form.Group>
+                      </Col>
+                      <Col md={4}>
+                        <Form.Group>
+                          <Form.Label className="fw-semibold">Teléfono</Form.Label>
+                          <Form.Control
+                            value={p.telefono}
+                            onChange={(e) =>
+                              handlePersonaChange(index, "telefono", e.target.value)
+                            }
+                          />
+                        </Form.Group>
+                      </Col>
+                    </Row>
+                    <Button
+                      variant="outline-danger"
+                      size="sm"
+                      className="position-absolute top-0 end-0 m-2"
+                      onClick={() => handleRemovePersona(index)}
+                    >
+                      <i className="bi bi-x-circle">x</i>
+                    </Button>
+                  </div>
+                ))}
+
+                <Button
+                  variant="outline-primary"
+                  size="sm"
+                  className="mb-2"
+                  onClick={handleAddPersona}
+                >
+                  <i className="bi bi-person-plus me-2"></i>Agregar Persona
+                </Button>
+              </div>
             </>
           )}
         </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setEditedCliente(null)}>
+
+        <Modal.Footer className="bg-light border-top">
+          <Button variant="outline-secondary" onClick={() => setEditedCliente(null)}>
             Cancelar
           </Button>
           <Button variant="success" onClick={handleSaveEdit}>
-            Guardar Cambios
-          </Button>
-        </Modal.Footer>
-      </Modal>
-
-      {/* Modal para nuevo cliente */}
-      <Modal show={showModal} onHide={() => setShowModal(false)} size="lg">
-        <Modal.Header closeButton>
-          <Modal.Title>Agregar Cliente</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form.Group className="mb-2">
-            <Form.Label>Compañía</Form.Label>
-            <Form.Control
-              value={newCliente.compania}
-              onChange={(e) => setNewCliente({ ...newCliente, compania: e.target.value })}
-            />
-          </Form.Group>
-          <Form.Group className="mb-2">
-            <Form.Label>Dirección</Form.Label>
-            <Form.Control
-              value={newCliente.direccion}
-              onChange={(e) => setNewCliente({ ...newCliente, direccion: e.target.value })}
-            />
-          </Form.Group>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>
-            Cancelar
-          </Button>
-          <Button variant="success" onClick={handleAddCliente}>
-            Agregar
+            <i className="bi bi-check-circle me-2"></i>
+            {editedCliente?._id ? "Guardar Cambios" : "Agregar Cliente"}
           </Button>
         </Modal.Footer>
       </Modal>
