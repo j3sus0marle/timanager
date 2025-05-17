@@ -13,7 +13,6 @@ const ItemList: React.FC = () => {
     modelo: "",
     proveedor: "",
     unidad: "PZA",
-    cantidad: 0,
     precioUnitario: 0,
   });
 
@@ -33,7 +32,6 @@ const ItemList: React.FC = () => {
       modelo: "",
       proveedor: "",
       unidad: "PZA",
-      cantidad: 0,
       precioUnitario: 0,
     });
     fetchItems();                // Recarga la lista
@@ -235,18 +233,6 @@ const ItemList: React.FC = () => {
       </Col>
 
       <Col md={4} className="mb-3">
-        <Form.Label className="fw-semibold">Cantidad</Form.Label>
-        <Form.Control
-          type="number"
-          placeholder="Ej. 15"
-          value={newItem.cantidad}
-          onChange={(e) =>
-            setNewItem((prev) => ({ ...prev, cantidad: Number(e.target.value) }))
-          }
-        />
-      </Col>
-
-      <Col md={4} className="mb-3">
         <Form.Label className="fw-semibold">Precio Unitario</Form.Label>
         <Form.Control
           type="number"
@@ -259,21 +245,6 @@ const ItemList: React.FC = () => {
       </Col>
     </Row>
 
-    {/* Categorías */}
-    <Form.Group className="mb-2">
-      <Form.Label className="fw-semibold">Categorías</Form.Label>
-      <Row className="px-2">
-        {["COMPUTO", "ALARMA", "CANALIZACION", "CONTROL ACCESO"].map((cat) => (
-          <Col xs={6} md={3} key={cat}>
-            <Form.Check
-              type="checkbox"
-              label={cat}
-              value={cat}
-            />
-          </Col>
-        ))}
-      </Row>
-    </Form.Group>
   </Modal.Body>
 
   <Modal.Footer className="bg-light border-top">

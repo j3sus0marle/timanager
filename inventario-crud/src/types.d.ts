@@ -5,7 +5,6 @@ export interface IItem {
   modelo: string;
   proveedor: string;
   unidad: string;
-  cantidad: number;
   precioUnitario: number;
 }
 
