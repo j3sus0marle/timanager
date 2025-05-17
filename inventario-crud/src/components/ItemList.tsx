@@ -24,6 +24,27 @@ const ItemList: React.FC = () => {
   const [editedItem, setEditedItem] = useState<IItem | null>(null);
   const urlServer = "http://192.168.100.25:6051/api/items/";
 
+  const handleCreateNewItem = async () => {
+  try {
+    await axios.post(urlServer, newItem);
+    setShowModal(false);         // Cierra el modal
+    setNewItem({                 // Resetea el formulario
+      descripcion: "",
+      marca: "",
+      modelo: "",
+      proveedor: "",
+      unidad: "PZA",
+      cantidad: 0,
+      precioUnitario: 0,
+      categoria: [],
+    });
+    fetchItems();                // Recarga la lista
+  } catch (error) {
+    console.error("Error al crear el nuevo item:", error);
+  }
+};
+
+
   const fetchItems = async () => {
     try {
       const res = await axios.get<IItem[]>(urlServer);
@@ -272,7 +293,7 @@ const ItemList: React.FC = () => {
     <Button variant="outline-secondary" onClick={() => setShowModal(false)}>
       Cancelar
     </Button>
-    <Button variant="success" onClick={handleSaveEditItem}>
+    <Button variant="success" onClick={handleCreateNewItem}>
       <i className="bi bi-check-circle me-2"></i>
       Guardar
     </Button>
