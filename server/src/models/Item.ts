@@ -8,7 +8,6 @@ export interface IItem extends Document {
   unidad: "PZA" | "MTS";
   cantidad: number;
   precioUnitario: number;
-  categoria: string[];
 }
 
 
@@ -19,8 +18,7 @@ const itemSchema = new Schema<IItem>({
   proveedor: { type: String, required: true },
   unidad: { type: String, enum: ["PZA", "MTS"], required: true },
   cantidad: { type: Number, required: true },
-  precioUnitario: { type: Number, required: true },
-  categoria: { type: [String], required: true }, 
+  precioUnitario: { type: Number, required: true }
 });
 
 export const Item = mongoose.model<IItem>("Item", itemSchema);

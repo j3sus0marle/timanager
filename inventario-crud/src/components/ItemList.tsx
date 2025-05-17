@@ -15,14 +15,13 @@ const ItemList: React.FC = () => {
     unidad: "PZA",
     cantidad: 0,
     precioUnitario: 0,
-    categoria: [],
   });
 
   const [searchTerm, setSearchTerm] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [editItemId, setEditItemId] = useState<string | null>(null);
   const [editedItem, setEditedItem] = useState<IItem | null>(null);
-  const urlServer = "http://192.168.100.25:6051/api/items/";
+  const urlServer = import.meta.env.VITE_API_URL + "items/";
 
   const handleCreateNewItem = async () => {
   try {
@@ -36,7 +35,6 @@ const ItemList: React.FC = () => {
       unidad: "PZA",
       cantidad: 0,
       precioUnitario: 0,
-      categoria: [],
     });
     fetchItems();                // Recarga la lista
   } catch (error) {
@@ -96,8 +94,7 @@ const ItemList: React.FC = () => {
         (item) =>
           item.descripcion.toLowerCase().includes(term.toLowerCase()) ||
           item.marca.toLowerCase().includes(term.toLowerCase()) ||
-          item.modelo.toLowerCase().includes(term.toLowerCase()) ||
-          item.categoria.some((cat) => cat.toLowerCase().includes(term.toLowerCase())) // Aquí se busca en las categorías
+          item.modelo.toLowerCase().includes(term.toLowerCase())
       );
       setFilteredItems(filtered);
     }
@@ -125,14 +122,7 @@ const ItemList: React.FC = () => {
     />
   );
 
-  const handleCategoryChange = (category: string) => {
-    if (editedItem) {
-      const newCategories = editedItem.categoria.includes(category)
-        ? editedItem.categoria.filter((cat) => cat !== category)
-        : [...editedItem.categoria, category];
-      setEditedItem({ ...editedItem, categoria: newCategories });
-    }
-  };
+
 
   return (
     <div className="container mt-4">
@@ -161,45 +151,44 @@ const ItemList: React.FC = () => {
             <th>Unidad</th>
             <th>Cantidad</th>
             <th>Precio Unitario</th>
-            <th>Categoría</th>
             <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
-          {filteredItems.map((item) => (
-            <tr key={item._id}>
-              {["descripcion", "marca", "modelo", "proveedor", "unidad", "cantidad", "precioUnitario", "categoria"].map((field) => (
-                <td key={field}>
-                  {editItemId === item._id ? (
-                    renderEditableField(field as keyof IItem, field === "cantidad" || field === "precioUnitario" ? "number" : "text")
-                  ) : (
-                    field === "categoria" ? (
-                      item.categoria.join(", ")
-                    ) : (
-                      item[field as keyof IItem] // Aquí usamos acceso explícito
-                    )
-                  )}
-                </td>
-              ))}
-              <td>
-                {editItemId === item._id ? (
-                  <Button variant="primary" onClick={handleSaveEditItem}>
-                    Guardar
-                  </Button>
-                ) : (
-                  <>
-                    <Button variant="warning" className="me-2" onClick={() => handleEditItem(item._id!)}>
-                      Editar
-                    </Button>
-                    <Button variant="danger" onClick={() => handleDelete(item._id!)}>
-                      Eliminar
-                    </Button>
-                  </>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
+  {filteredItems.map((item) => (
+    <tr key={item._id}>
+      {["descripcion", "marca", "modelo", "proveedor", "unidad", "cantidad", "precioUnitario"].map((field) => (
+        <td key={field}>
+          {editItemId === item._id ? (
+            renderEditableField(
+              field as keyof IItem,
+              field === "cantidad" || field === "precioUnitario" ? "number" : "text"
+            )
+          ) : (
+            item[field as keyof IItem]
+          )}
+        </td>
+      ))}
+      <td>
+        {editItemId === item._id ? (
+          <Button variant="primary" onClick={handleSaveEditItem}>
+            Guardar
+          </Button>
+        ) : (
+          <>
+            <Button variant="warning" className="me-2" onClick={() => handleEditItem(item._id!)}>
+              Editar
+            </Button>
+            <Button variant="danger" onClick={() => handleDelete(item._id!)}>
+              Eliminar
+            </Button>
+          </>
+        )}
+      </td>
+    </tr>
+  ))}
+</tbody>
+
       </Table>
 
       {/* Modal Agregar */}
@@ -280,8 +269,6 @@ const ItemList: React.FC = () => {
               type="checkbox"
               label={cat}
               value={cat}
-              checked={editedItem?.categoria.includes(cat)}
-              onChange={() => handleCategoryChange(cat)}
             />
           </Col>
         ))}

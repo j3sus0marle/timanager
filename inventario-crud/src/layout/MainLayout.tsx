@@ -12,7 +12,7 @@ const MainLayout: React.FC = () => {
     { path: "/cotizaciones-electricas", label: "Cotizaciones Eléctricas" },
     { path: "/clientes", label: "Clientes" },
     { path: "/vendedores", label: "Vendedores" },
-    { path: "/productos", label: "Productos" },
+    { path: "/mat-elec", label: "Material Electrico" },
   ];
 
   return (

@@ -7,7 +7,7 @@ import Cotizaciones from "./pages/Cotizaciones";
 import CotizacionesElectricas from "./pages/CotizacionesElectricas";
 import Clientes from "./pages/Clientes";
 import Vendedores from "./pages/Vendedores";
-import Productos from "./pages/Productos";
+import Productos from "./pages/Mat-elec";
 
 
 function App() {
@@ -22,7 +22,7 @@ function App() {
           <Route path="cotizaciones-electricas" element={<CotizacionesElectricas />} />
           <Route path="clientes" element={<Clientes />} />
           <Route path="vendedores" element={<Vendedores />} />
-          <Route path="productos" element={<Productos />} />
+          <Route path="mat-elec" element={<Productos />} />
         </Route>
       </Routes>
     </Router>

@@ -7,7 +7,6 @@ export interface IItem {
   unidad: string;
   cantidad: number;
   precioUnitario: number;
-  categoria: string[];
 }
 
 export interface Vendedor {

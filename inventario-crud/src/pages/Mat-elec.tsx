@@ -4,7 +4,7 @@ import ItemList from "../components/ItemList";
 const Productos: React.FC = () => {
   return (
     <div>
-      <h2>Productos</h2>
+      <h2>Material Electrico</h2>
       <ItemList />
     </div>
   );
