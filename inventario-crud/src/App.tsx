@@ -8,6 +8,7 @@ import CotizacionesElectricas from "./pages/CotizacionesElectricas";
 import Clientes from "./pages/Clientes";
 import Vendedores from "./pages/Vendedores";
 import Productos from "./pages/Mat-elec";
+import Inventario from "./pages/Inventario";
 
 
 function App() {
@@ -23,6 +24,7 @@ function App() {
           <Route path="clientes" element={<Clientes />} />
           <Route path="vendedores" element={<Vendedores />} />
           <Route path="mat-elec" element={<Productos />} />
+          <Route path="inventario" element={<Inventario />} />
         </Route>
       </Routes>
     </Router>

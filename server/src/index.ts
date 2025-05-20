@@ -6,6 +6,7 @@ import dotenv from "dotenv";
 import itemRoutes from "./routes/itemRoutes";
 import vendedoresRoutes from './routes/vendedores'
 import clienteRoutes from './routes/clientes';
+import inventoryRoutes from "./routes/inventoryRoutes";
 
 dotenv.config();
 const app: Application = express();
@@ -19,6 +20,7 @@ mongoose.connect(process.env.MONGO_URI || "")
 app.use("/api/items", itemRoutes);
 app.use('/api/vendedores', vendedoresRoutes);
 app.use('/api/clientes', clienteRoutes);
+app.use("/api/inventario", inventoryRoutes);
 
 const PORT = process.env.PORT || 6051;
 app.listen(PORT, () => console.log(`Servidor corriendo en el puerto ${PORT}`));

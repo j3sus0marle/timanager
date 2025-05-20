@@ -147,7 +147,6 @@ const ItemList: React.FC = () => {
             <th>Modelo</th>
             <th>Proveedor</th>
             <th>Unidad</th>
-            <th>Cantidad</th>
             <th>Precio Unitario</th>
             <th>Acciones</th>
           </tr>
@@ -155,12 +154,12 @@ const ItemList: React.FC = () => {
         <tbody>
   {filteredItems.map((item) => (
     <tr key={item._id}>
-      {["descripcion", "marca", "modelo", "proveedor", "unidad", "cantidad", "precioUnitario"].map((field) => (
+      {["descripcion", "marca", "modelo", "proveedor", "unidad", "precioUnitario"].map((field) => (
         <td key={field}>
           {editItemId === item._id ? (
             renderEditableField(
               field as keyof IItem,
-              field === "cantidad" || field === "precioUnitario" ? "number" : "text"
+                field === "precioUnitario" ? "number" : "text"
             )
           ) : (
             item[field as keyof IItem]

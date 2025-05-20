@@ -6,7 +6,6 @@ export interface IItem extends Document {
   modelo: string;
   proveedor: string;
   unidad: "PZA" | "MTS";
-  cantidad: number;
   precioUnitario: number;
 }
 
@@ -17,7 +16,6 @@ const itemSchema = new Schema<IItem>({
   modelo: { type: String, required: true },
   proveedor: { type: String, required: true },
   unidad: { type: String, enum: ["PZA", "MTS"], required: true },
-  cantidad: { type: Number, required: true },
   precioUnitario: { type: Number, required: true }
 });
 
