@@ -18,7 +18,10 @@ const MainLayout: React.FC = () => {
 
   return (
     <div className="d-flex vh-100">
-      <nav className="bg-dark text-white p-3" style={{ width: "220px" }}>
+      <nav
+        className="bg-dark text-white p-3"
+        style={{ width: "220px", minWidth: "220px", maxWidth: "220px" }}
+      >
         <h4 className="text-center mb-4">Menú</h4>
         <ul className="nav flex-column">
           {navItems.map((item) => (
