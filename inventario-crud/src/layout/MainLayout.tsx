@@ -1,9 +1,12 @@
 // src/layout/MainLayout.tsx
 import { Link, Outlet, useLocation } from "react-router-dom";
 import "./MainLayout.css"; // puedes usar Bootstrap o tu propio CSS
+import { useState } from "react";
+import { FaBars } from "react-icons/fa";
 
 const MainLayout: React.FC = () => {
   const location = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const navItems = [
     { path: "/dashboard", label: "Dashboard" },
@@ -18,9 +21,16 @@ const MainLayout: React.FC = () => {
 
   return (
     <div className="d-flex vh-100">
+      {/* Botón hamburguesa para móviles */}
+      <button
+        className="menu-toggle d-md-none"
+        onClick={() => setMenuOpen((open) => !open)}
+        aria-label="Mostrar menú"
+      >
+        <FaBars size={24} />
+      </button>
       <nav
-        className="bg-dark text-white p-3"
-        style={{ width: "220px", minWidth: "220px", maxWidth: "220px" }}
+        className={`main-nav bg-dark text-white p-3 ${menuOpen ? "open" : ""}`}
       >
         <h4 className="text-center mb-4">Menú</h4>
         <ul className="nav flex-column">
@@ -31,6 +41,7 @@ const MainLayout: React.FC = () => {
                 className={`nav-link text-white ${
                   location.pathname === item.path ? "fw-bold" : ""
                 }`}
+                onClick={() => setMenuOpen(false)}
               >
                 {item.label}
               </Link>

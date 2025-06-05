@@ -36,7 +36,7 @@ const Inventario: React.FC = () => {
   // Estado para la página actual de la paginación
   const [currentPage, setCurrentPage] = useState(1);
   // Cantidad de artículos por página
-  const itemsPerPage = 5;
+  const itemsPerPage = 10;
 
   // URL base del backend para inventario
   const urlServer = import.meta.env.VITE_API_URL + "inventario/";
@@ -114,7 +114,8 @@ const Inventario: React.FC = () => {
           item.descripcion.toLowerCase().includes(lowerTerm) ||
           item.marca.toLowerCase().includes(lowerTerm) ||
           item.modelo.toLowerCase().includes(lowerTerm) ||
-          item.categorias.some((cat) => cat.toLowerCase().includes(lowerTerm))
+          item.categorias.some((cat) => cat.toLowerCase().includes(lowerTerm)) ||
+          item.numerosSerie.some((num) => num.toLowerCase().includes(lowerTerm))
       );
       setFilteredItems(filtered);
     }
@@ -128,7 +129,6 @@ const Inventario: React.FC = () => {
     { key: "unidad", label: "Unidad" },
     { key: "precioUnitario", label: "Precio Unitario" },
     { key: "cantidad", label: "Cantidad" },
-    { key: "categorias", label: "Categorías", render: (item) => item.categorias.join(", ") },
     { key: "numerosSerie", label: "Números de Serie", render: (item) => item.numerosSerie.join(", ") },
   ];
 
@@ -139,7 +139,7 @@ const Inventario: React.FC = () => {
     currentPage * itemsPerPage
   );
 
-  // Cambia la página actual
+  // Cambia la página currentPage
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
@@ -177,8 +177,8 @@ const Inventario: React.FC = () => {
       <div
         className="table-responsive"
         style={{
-          minHeight: 400,
-          maxHeight: 400,
+          minHeight: `calc(100vh - 270px)`, // Ajusta el 270px según el header, searchbar y paddings
+          maxHeight: `calc(100vh - 270px)`,
           overflowY: "auto",
           background: "#fff",
           borderRadius: 8,

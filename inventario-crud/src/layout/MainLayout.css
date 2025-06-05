@@ -7,4 +7,40 @@
     background-color: #495057;
     border-radius: 5px;
   }
-  
+  .main-nav {
+    width: 220px;
+    min-width: 220px;
+    max-width: 220px;
+    transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+  }
+  .menu-toggle {
+    position: fixed;
+    top: 18px;
+    left: 18px;
+    z-index: 1051;
+    background: #212529;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    padding: 8px 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  @media (max-width: 768px) {
+    .main-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      z-index: 1050;
+      transform: translateX(-100%);
+      box-shadow: 2px 0 8px rgba(0,0,0,0.08);
+    }
+    .main-nav.open {
+      transform: translateX(0);
+    }
+  }
+  @media (min-width: 769px) {
+    .menu-toggle {
+      display: none;
+    }
+  }
