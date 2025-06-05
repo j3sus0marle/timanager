@@ -87,6 +87,9 @@ const Inventario: React.FC = () => {
 
   // Elimina un artículo por id
   const handleDelete = async (id: string) => {
+    // Confirmación antes de eliminar
+    const confirmed = window.confirm("¿Estás seguro de que deseas eliminar este artículo? Esta acción no se puede deshacer.");
+    if (!confirmed) return;
     try {
       await axios.delete(urlServer + id);
       fetchItems();
@@ -156,7 +159,7 @@ const Inventario: React.FC = () => {
 
   // Renderizado del componente
   return (
-    <div className="container-fluid mt-4 px-3">
+    <div className="container-fluid mt-4 px-1 px-sm-3">
       {/* Barra de búsqueda y botones de acción */}
       <div className="d-flex flex-column flex-md-row justify-content-between align-items-stretch gap-2 mb-3">
         <SearchBar
@@ -165,11 +168,20 @@ const Inventario: React.FC = () => {
           placeholder="Buscar por descripción, marca, modelo o categoría..."
           className="flex-grow-1"
         />
-        <div className="d-flex gap-2">
-          <Button variant="success" onClick={() => setShowModal(true)}>
+        <div className="d-flex flex-row flex-wrap flex-md-nowrap gap-2 w-100 w-md-auto mt-2 mt-md-0">
+          <Button
+            variant="success"
+            className="w-100 w-md-auto"
+            onClick={() => setShowModal(true)}
+          >
             Agregar Artículo
           </Button>
-          <ExportExcelButton data={items.map(({ _id, ...item }) => item)} fileName={`inventario_${new Date().toISOString().slice(0,10)}.xlsx`} sheetName="Inventario" />
+          <ExportExcelButton
+            data={items.map(({ _id, ...item }) => item)}
+            fileName={`inventario_${new Date().toISOString().slice(0,10)}.xlsx`}
+            sheetName="Inventario"
+            className="w-100 w-md-auto"
+          />
         </div>
       </div>
 
@@ -189,10 +201,11 @@ const Inventario: React.FC = () => {
           columns={columns}
           data={paginatedItems}
           actions={(item) => (
-            <div className="d-flex flex-row align-items-center gap-1">
+            <div className="d-flex flex-column flex-sm-row align-items-stretch gap-1">
               <Button
                 variant="warning"
                 size="sm"
+                className="w-100 w-sm-auto"
                 onClick={() => handleEditItem(item)}
               >
                 Editar
@@ -200,6 +213,7 @@ const Inventario: React.FC = () => {
               <Button
                 variant="danger"
                 size="sm"
+                className="w-100 w-sm-auto"
                 onClick={() => handleDelete(item._id!)}
               >
                 Eliminar

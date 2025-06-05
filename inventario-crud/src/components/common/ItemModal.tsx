@@ -53,8 +53,9 @@ const ItemModal: React.FC<ItemModalProps> = ({ show, onHide, onSave, item, setIt
             { field: "proveedor", label: "Proveedor" },
           ].map(({ field, label }) => (
             <Col md={6} className="mb-3" key={field}>
-              <Form.Label>{label}</Form.Label>
+              <Form.Label htmlFor={`item-${field}`}>{label}</Form.Label>
               <Form.Control
+                id={`item-${field}`}
                 type="text"
                 value={(item as any)[field]}
                 onChange={(e) => setItem({ ...item, [field]: e.target.value })}
@@ -63,8 +64,9 @@ const ItemModal: React.FC<ItemModalProps> = ({ show, onHide, onSave, item, setIt
           ))}
 
           <Col md={4} className="mb-3">
-            <Form.Label>Unidad</Form.Label>
+            <Form.Label htmlFor="item-unidad">Unidad</Form.Label>
             <Form.Select
+              id="item-unidad"
               value={item.unidad}
               onChange={(e) => setItem({ ...item, unidad: e.target.value })}
             >
@@ -74,8 +76,9 @@ const ItemModal: React.FC<ItemModalProps> = ({ show, onHide, onSave, item, setIt
           </Col>
 
           <Col md={4} className="mb-3">
-            <Form.Label>Precio Unitario</Form.Label>
+            <Form.Label htmlFor="item-precioUnitario">Precio Unitario</Form.Label>
             <Form.Control
+              id="item-precioUnitario"
               type="number"
               value={item.precioUnitario}
               onChange={(e) => setItem({ ...item, precioUnitario: Number(e.target.value) })}
@@ -83,8 +86,9 @@ const ItemModal: React.FC<ItemModalProps> = ({ show, onHide, onSave, item, setIt
           </Col>
 
           <Col md={4} className="mb-3">
-            <Form.Label>Cantidad</Form.Label>
+            <Form.Label htmlFor="item-cantidad">Cantidad</Form.Label>
             <Form.Control
+              id="item-cantidad"
               type="number"
               value={item.cantidad}
               onChange={(e) => setItem({ ...item, cantidad: Number(e.target.value) })}
