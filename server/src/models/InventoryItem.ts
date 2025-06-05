@@ -13,13 +13,13 @@ export interface IInventoryItem extends Document {
 }
 
 const InventoryItemSchema: Schema = new Schema({
-  marca: { type: String, required: true },
-  modelo: { type: String, required: true },
-  descripcion: { type: String, required: true },
-  proveedor: { type: String, required: true },
-  unidad: { type: String, required: true },
-  precioUnitario: { type: Number, required: true },
-  cantidad: { type: Number, required: true },
+  marca: { type: String },
+  modelo: { type: String },
+  descripcion: { type: String },
+  proveedor: { type: String },
+  unidad: { type: String },
+  precioUnitario: { type: Number },
+  cantidad: { type: Number },
   numerosSerie: { type: [String], default: [] }, // Arreglo de números de serie
   categorias: { type: [String], default: [] },
 });
