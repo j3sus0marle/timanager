@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { Modal, Button, Form, Alert, Spinner } from "react-bootstrap";
+import React, { useState } from "react";
+import { Modal, Button, Form, Alert } from "react-bootstrap";
 import { IInventoryItem } from "../../types";
 import { BrowserMultiFormatReader } from '@zxing/browser';
 
@@ -11,7 +11,6 @@ interface BajaModalProps {
 }
 
 const BajaModal: React.FC<BajaModalProps> = ({ show, onHide, onBaja, items }) => {
-  const [scanning, setScanning] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
   const [foundItem, setFoundItem] = useState<IInventoryItem | null>(null);
   const [cantidad, setCantidad] = useState(1);
