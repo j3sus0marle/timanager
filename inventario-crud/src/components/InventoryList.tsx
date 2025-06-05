@@ -8,6 +8,8 @@ import DataTable, { DataTableColumn } from "./common/DataTable";
 import ExportExcelButton from "./common/ExportExcelButton";
 import PaginationCompact from "./common/PaginationCompact";
 import ItemModal from "./common/ItemModal";
+import BajaModal from "./common/BajaModal";
+import AltaModal from "./common/AltaModal";
 
 // Componente funcional para la página de inventario
 const Inventario: React.FC = () => {
@@ -19,6 +21,10 @@ const Inventario: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   // Estado para mostrar/ocultar el modal de agregar/editar
   const [showModal, setShowModal] = useState(false);
+  // Estado para mostrar/ocultar el modal de baja
+  const [showBajaModal, setShowBajaModal] = useState(false);
+  // Estado para mostrar/ocultar el modal de alta
+  const [showAltaModal, setShowAltaModal] = useState(false);
   // Estado para el id del artículo en edición
   const [editItemId, setEditItemId] = useState<string | null>(null);
   // Estado para el artículo nuevo o en edición
@@ -105,6 +111,50 @@ const Inventario: React.FC = () => {
     setShowModal(true);
   };
 
+  // Lógica para realizar la baja
+  const handleBaja = async (item: IInventoryItem, cantidad: number) => {
+    try {
+      // Actualiza la cantidad del artículo
+      await axios.put(urlServer + item._id, {
+        ...item,
+        cantidad: item.cantidad - cantidad,
+      });
+      fetchItems();
+    } catch (error) {
+      console.error("Error al realizar la baja:", error);
+    }
+  };
+
+  // Lógica para alta desde escaneo
+  const handleAlta = async (item: IInventoryItem | null, sn: string) => {
+    if (item) {
+      // Si el artículo ya existe con ese SN, aumentar cantidad
+      try {
+        await axios.put(urlServer + item._id, {
+          ...item,
+          cantidad: item.cantidad, // La cantidad ya viene sumada desde AltaModal
+        });
+        fetchItems();
+      } catch (error) {
+        console.error("Error al actualizar cantidad en alta:", error);
+      }
+    } else {
+      // Si no existe, abre el formulario de alta con el SN precargado
+      setShowModal(true);
+      setNewItem({
+        descripcion: "",
+        marca: "",
+        modelo: "",
+        proveedor: "",
+        unidad: "PZA",
+        precioUnitario: 0,
+        cantidad: 1,
+        numerosSerie: [sn],
+        categorias: [],
+      });
+    }
+  };
+
   // Filtra los artículos según el término de búsqueda
   const handleSearch = (term: string) => {
     setSearchTerm(term);
@@ -176,6 +226,20 @@ const Inventario: React.FC = () => {
           >
             Agregar Artículo
           </Button>
+          <Button
+            variant="info"
+            className="w-100 w-md-auto"
+            onClick={() => setShowBajaModal(true)}
+          >
+            Baja
+          </Button>
+          <Button
+            variant="primary"
+            className="w-100 w-md-auto"
+            onClick={() => setShowAltaModal(true)}
+          >
+            Alta
+          </Button>
           <ExportExcelButton
             data={items.map(({ _id, ...item }) => item)}
             fileName={`inventario_${new Date().toISOString().slice(0,10)}.xlsx`}
@@ -245,6 +309,22 @@ const Inventario: React.FC = () => {
         item={newItem}
         setItem={setNewItem}
         isEdit={!!editItemId}
+      />
+
+      {/* Modal para dar de baja artículos */}
+      <BajaModal
+        show={showBajaModal}
+        onHide={() => setShowBajaModal(false)}
+        onBaja={handleBaja}
+        items={items}
+      />
+
+      {/* Modal para dar de alta artículos */}
+      <AltaModal
+        show={showAltaModal}
+        onHide={() => setShowAltaModal(false)}
+        onAlta={handleAlta}
+        items={items}
       />
     </div>
   );
