@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { IInventoryItem } from "../types";
-import { Button } from "react-bootstrap";
+import { Button, Modal, Form, Table, Row, Col } from "react-bootstrap";
 import SearchBar from "./common/SearchBar";
 import DataTable, { DataTableColumn } from "./common/DataTable";
 import ExportExcelButton from "./common/ExportExcelButton";
@@ -25,6 +25,8 @@ const Inventario: React.FC = () => {
   const [showBajaModal, setShowBajaModal] = useState(false);
   // Estado para mostrar/ocultar el modal de alta
   const [showAltaModal, setShowAltaModal] = useState(false);
+  // Estado para mostrar/ocultar el modal de movimientos
+  const [showMovModal, setShowMovModal] = useState(false);
   // Estado para el id del artículo en edición
   const [editItemId, setEditItemId] = useState<string | null>(null);
   // Estado para el artículo nuevo o en edición
@@ -43,9 +45,16 @@ const Inventario: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   // Cantidad de artículos por página
   const itemsPerPage = 10;
+  // Estado para los movimientos consultados
+  const [movimientos, setMovimientos] = useState<any[]>([]);
+  // Estado para el filtro de fechas
+  const [movDesde, setMovDesde] = useState("");
+  const [movHasta, setMovHasta] = useState("");
+  // Estado para la paginación de movimientos
+  const [movPage, setMovPage] = useState(1);
 
-  // URL base del backend para inventario
   const urlServer = import.meta.env.VITE_API_URL + "inventario/";
+  const urlMovimientos = import.meta.env.VITE_API_URL + "inventory-movements";
 
   // Función para obtener los artículos del backend
   const fetchItems = async () => {
@@ -53,8 +62,23 @@ const Inventario: React.FC = () => {
       const res = await axios.get<IInventoryItem[]>(urlServer);
       setItems(res.data);
       setFilteredItems(res.data);
+      return res.data; // <-- retorna los datos
     } catch (error) {
       console.error("Error al obtener inventario:", error);
+      return [];
+    }
+  };
+
+  // Función para obtener los movimientos del backend
+  const fetchMovimientos = async () => {
+    try {
+      const params: any = {};
+      if (movDesde) params.desde = new Date(movDesde + "T00:00:00.000Z").toISOString();
+      if (movHasta) params.hasta = new Date(movHasta + "T23:59:59.999Z").toISOString();
+      const res = await axios.get(urlMovimientos, { params });
+      setMovimientos(Array.isArray(res.data) ? res.data : []);
+    } catch (error) {
+      setMovimientos([]);
     }
   };
 
@@ -62,10 +86,32 @@ const Inventario: React.FC = () => {
   const handleSaveItem = async () => {
     try {
       if (editItemId) {
+        // Obtener el item original antes de editar
+        const original = items.find(i => i._id === editItemId);
+        const cantidadOriginal = original ? original.cantidad : 0;
         await axios.put(urlServer + editItemId, newItem);
+        // Registrar movimiento si la cantidad cambió
+        const cantidadEditada = newItem.cantidad - cantidadOriginal;
+        if (cantidadEditada !== 0) {
+          await axios.post(urlMovimientos, {
+            itemId: editItemId,
+            tipo: cantidadEditada > 0 ? "entrada" : "salida",
+            cantidad: Math.abs(cantidadEditada),
+            fecha: new Date(),
+          });
+        }
       } else {
-        const { _id, ...itemWithoutId } = newItem as any;
-        await axios.post(urlServer, itemWithoutId);
+        // Crear nuevo artículo
+        const res = await axios.post<IInventoryItem>(urlServer, { ...newItem });
+        // Registrar movimiento de entrada si la cantidad es mayor a 0
+        if (newItem.cantidad > 0 && res.data && res.data._id) {
+          await axios.post(urlMovimientos, {
+            itemId: res.data._id,
+            tipo: "entrada",
+            cantidad: newItem.cantidad,
+            fecha: new Date(),
+          });
+        }
       }
       setShowModal(false);
       resetModalState();
@@ -97,8 +143,35 @@ const Inventario: React.FC = () => {
     const confirmed = window.confirm("¿Estás seguro de que deseas eliminar este artículo? Esta acción no se puede deshacer.");
     if (!confirmed) return;
     try {
+      // Obtener el item antes de eliminar para registrar el movimiento
+      const item = items.find(i => i._id === id);
+            if (item && item.cantidad > 0) {
+        await axios.post(urlMovimientos, {
+          itemId: id,
+          tipo: "salida",
+          cantidad: item.cantidad,
+          fecha: new Date(),
+        });
+      }
       await axios.delete(urlServer + id);
-      fetchItems();
+      // Registrar movimiento de salida por la cantidad total eliminada
+
+      const updatedItems = await fetchItems();
+      // Aplica el filtro con los datos nuevos
+      if (searchTerm === "") {
+        setFilteredItems(updatedItems);
+      } else {
+        const lowerTerm = searchTerm.toLowerCase();
+        const filtered = updatedItems.filter(
+          (item) =>
+            item.descripcion.toLowerCase().includes(lowerTerm) ||
+            item.marca.toLowerCase().includes(lowerTerm) ||
+            item.modelo.toLowerCase().includes(lowerTerm) ||
+            item.categorias.some((cat) => cat.toLowerCase().includes(lowerTerm)) ||
+            item.numerosSerie.some((num) => num.toLowerCase().includes(lowerTerm))
+        );
+        setFilteredItems(filtered);
+      }
     } catch (error) {
       console.error("Error al eliminar item:", error);
     }
@@ -114,10 +187,16 @@ const Inventario: React.FC = () => {
   // Lógica para realizar la baja
   const handleBaja = async (item: IInventoryItem, cantidad: number) => {
     try {
-      // Actualiza la cantidad del artículo
       await axios.put(urlServer + item._id, {
         ...item,
         cantidad: item.cantidad - cantidad,
+      });
+      // Registrar movimiento de salida
+      await axios.post(urlMovimientos, {
+        itemId: item._id,
+        tipo: "salida",
+        cantidad,
+        fecha: new Date(),
       });
       fetchItems();
     } catch (error) {
@@ -128,18 +207,29 @@ const Inventario: React.FC = () => {
   // Lógica para alta desde escaneo
   const handleAlta = async (item: IInventoryItem | null, sn: string) => {
     if (item) {
-      // Si el artículo ya existe con ese SN, aumentar cantidad
       try {
+        // Encuentra el item original antes de actualizar
+        const original = items.find(i => i._id === item._id);
+        const cantidadOriginal = original ? original.cantidad : 0;
         await axios.put(urlServer + item._id, {
           ...item,
           cantidad: item.cantidad, // La cantidad ya viene sumada desde AltaModal
         });
+        // Registrar movimiento de entrada SOLO si la cantidad realmente aumentó
+        const cantidadAgregada = item.cantidad - cantidadOriginal;
+        if (cantidadAgregada > 0) {
+          await axios.post(urlMovimientos, {
+            itemId: item._id,
+            tipo: "entrada",
+            cantidad: cantidadAgregada,
+            fecha: new Date(),
+          });
+        }
         fetchItems();
       } catch (error) {
         console.error("Error al actualizar cantidad en alta:", error);
       }
     } else {
-      // Si no existe, abre el formulario de alta con el SN precargado
       setShowModal(true);
       setNewItem({
         descripcion: "",
@@ -191,6 +281,9 @@ const Inventario: React.FC = () => {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+  const movsPerPage = 8;
+  const totalMovPages = Math.ceil(movimientos.length / movsPerPage);
+  const paginatedMovs = movimientos.slice((movPage - 1) * movsPerPage, movPage * movsPerPage);
 
   // Cambia la página currentPage
   const handlePageChange = (page: number) => {
@@ -202,10 +295,43 @@ const Inventario: React.FC = () => {
     fetchItems();
   }, []);
 
+  // Limpia filtros y movimientos al abrir el modal de movimientos
+  useEffect(() => {
+    if (showMovModal) {
+      setMovimientos([]);
+      setMovDesde("");
+      setMovHasta("");
+    }
+  }, [showMovModal]);
+
+  // Al abrir el modal de movimientos, poner por defecto la semana en curso y mostrar movimientos
+  useEffect(() => {
+    if (showMovModal) {
+      // Calcular lunes y domingo de la semana actual
+      const hoy = new Date();
+      const diaSemana = hoy.getDay(); // 0=domingo, 1=lunes, ...
+      const lunes = new Date(hoy);
+      lunes.setDate(hoy.getDate() - ((diaSemana + 6) % 7));
+      const domingo = new Date(hoy);
+      domingo.setDate(hoy.getDate() + (7 - diaSemana) % 7);
+      // Formato yyyy-mm-dd
+      const toYYYYMMDD = (d: Date) => d.toISOString().slice(0, 10);
+      setMovDesde(toYYYYMMDD(lunes));
+      setMovHasta(toYYYYMMDD(domingo));
+      // Consultar movimientos de la semana
+      setTimeout(() => { fetchMovimientos(); }, 0);
+    }
+  }, [showMovModal]);
+
   // Reinicia la página al cambiar el filtro/búsqueda
   useEffect(() => {
     setCurrentPage(1); // Reset page when filter/search changes
   }, [filteredItems.length]);
+
+  // Reset paginación de movimientos al buscar o cambiar movimientos
+  useEffect(() => {
+    setMovPage(1);
+  }, [movimientos, movDesde, movHasta]);
 
   // Renderizado del componente
   return (
@@ -239,6 +365,13 @@ const Inventario: React.FC = () => {
             onClick={() => setShowAltaModal(true)}
           >
             Alta
+          </Button>
+          <Button
+            variant="secondary"
+            className="w-100 w-md-auto"
+            onClick={() => setShowMovModal(true)}
+          >
+            Movimientos
           </Button>
           <ExportExcelButton
             data={items.map(({ _id, ...item }) => item)}
@@ -326,6 +459,88 @@ const Inventario: React.FC = () => {
         onAlta={handleAlta}
         items={items}
       />
+
+      {/* Modal para movimientos */}
+      <Modal show={showMovModal} onHide={() => setShowMovModal(false)} size="lg" centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Movimientos de Inventario</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Row className="mb-3">
+            <Col md={5}>
+              <Form.Label>Desde</Form.Label>
+              <Form.Control type="date" value={movDesde} onChange={e => setMovDesde(e.target.value)} />
+            </Col>
+            <Col md={5}>
+              <Form.Label>Hasta</Form.Label>
+              <Form.Control type="date" value={movHasta} onChange={e => setMovHasta(e.target.value)} />
+            </Col>
+            <Col md={2} className="d-flex align-items-end">
+              <Button variant="primary" className="w-100" onClick={fetchMovimientos}>Buscar</Button>
+            </Col>
+          </Row>
+          <div className="mb-2 d-flex justify-content-end">
+            <ExportExcelButton
+              data={movimientos.map(mov => {
+                const item = mov.itemId || {};
+                return {
+                  Fecha: mov.fecha ? new Date(mov.fecha).toLocaleString() : "-",
+                  Tipo: mov.tipo === "entrada" ? "Entrada" : mov.tipo === "salida" ? "Salida" : "-",
+                  Cantidad: typeof mov.cantidad === "number" ? mov.cantidad : "-",
+                  Producto: item.descripcion || "-",
+                  Marca: item.marca || "-",
+                  Modelo: item.modelo || "-"
+                };
+              })}
+              fileName={`movimientos_${movDesde || ""}_${movHasta || ""}.xlsx`}
+              sheetName="Movimientos"
+              className="mb-2"
+            />
+          </div>
+          <Table striped bordered hover size="sm">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Tipo</th>
+                <th>Cantidad</th>
+                <th>Producto</th>
+                <th>Marca</th>
+                <th>Modelo</th>
+              </tr>
+            </thead>
+            <tbody>
+              {paginatedMovs.length === 0 && (
+                <tr><td colSpan={6} className="text-center">Sin movimientos</td></tr>
+              )}
+              {paginatedMovs.map((mov, idx) => {
+                const item = mov.itemId || {};
+                return (
+                  <tr key={idx}>
+                    <td>{mov.fecha ? new Date(mov.fecha).toLocaleString() : "-"}</td>
+                    <td>{mov.tipo === "entrada" ? "Entrada" : mov.tipo === "salida" ? "Salida" : "-"}</td>
+                    <td>{typeof mov.cantidad === "number" ? mov.cantidad : "-"}</td>
+                    <td>{item.descripcion || "-"}</td>
+                    <td>{item.marca || "-"}</td>
+                    <td>{item.modelo || "-"}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </Table>
+          {totalMovPages > 1 && (
+            <div className="d-flex justify-content-center my-2">
+              <PaginationCompact
+                currentPage={movPage}
+                totalPages={totalMovPages}
+                onPageChange={setMovPage}
+              />
+            </div>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowMovModal(false)}>Cerrar</Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };
