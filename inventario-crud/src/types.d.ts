@@ -27,3 +27,24 @@ export interface IInventoryItem {
   numerosSerie: string[];
   categorias: string[];
 }
+
+export interface IInventoryMovement {
+  _id?: string;
+  itemId: any; // Puede ser objeto o string
+  tipo: "entrada" | "salida";
+  cantidad: number;
+  fecha: string;
+}
+
+export interface Persona {
+  nombre: string;
+  correo: string;
+  telefono: string;
+}
+
+export interface Cliente {
+  _id?: string;
+  compania: string;
+  direccion: string;
+  personas: Persona[];
+}

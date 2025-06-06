@@ -1,5 +1,5 @@
 // src/pages/Productos.tsx
-import ItemList from "../components/ItemList";
+import ItemList from "../components/items/ItemList";
 
 const Productos: React.FC = () => {
   return (

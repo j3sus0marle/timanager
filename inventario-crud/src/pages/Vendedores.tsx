@@ -1,5 +1,5 @@
 // src/pages/Dashboard.tsx
-import VendedorList from "../components/VendedorList";
+import VendedorList from "../components/vendedores/VendedorList";
 
 const Vendedores: React.FC = () => {
     return (
@@ -10,4 +10,3 @@ const Vendedores: React.FC = () => {
   };
   
   export default Vendedores;
-  

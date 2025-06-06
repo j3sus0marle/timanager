@@ -1,7 +1,13 @@
 // src/pages/Dashboard.tsx
+import AnalisisInventario from "../components/inventario/AnalisisInventario";
+
 const Dashboard: React.FC = () => {
-    return <h2>Dashboard</h2>;
+    return (
+      <>
+
+        <AnalisisInventario />
+      </>
+    );
   };
   
   export default Dashboard;
-  

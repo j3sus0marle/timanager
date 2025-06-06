@@ -1,5 +1,5 @@
 // src/pages/Dashboard.tsx
-import InventarioList from "../components/InventoryList";
+import InventarioList from "../components/inventario/InventoryList";
 
 const Inventario: React.FC = () => {
     return (
@@ -11,4 +11,3 @@ const Inventario: React.FC = () => {
   };
   
   export default Inventario;
-  

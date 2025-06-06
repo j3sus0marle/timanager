@@ -1,6 +1,7 @@
+// ...moved from ../ItemList.tsx...
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { IItem } from "../types";
+import { IItem } from "../../types";
 import { Modal, Button, Table, Form, Row, Col } from "react-bootstrap";
 
 

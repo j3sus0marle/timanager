@@ -1,15 +1,15 @@
 // Componente principal de la lista de inventario
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { IInventoryItem } from "../types";
+import { IInventoryItem } from "../../types";
 import { Button, Modal, Form, Table, Row, Col } from "react-bootstrap";
-import SearchBar from "./common/SearchBar";
-import DataTable, { DataTableColumn } from "./common/DataTable";
-import ExportExcelButton from "./common/ExportExcelButton";
-import PaginationCompact from "./common/PaginationCompact";
-import ItemModal from "./common/ItemModal";
-import BajaModal from "./common/BajaModal";
-import AltaModal from "./common/AltaModal";
+import SearchBar from "../common/SearchBar";
+import DataTable, { DataTableColumn } from "../common/DataTable";
+import ExportExcelButton from "../common/ExportExcelButton";
+import PaginationCompact from "../common/PaginationCompact";
+import ItemModal from "../common/ItemModal";
+import BajaModal from "../common/BajaModal";
+import AltaModal from "../common/AltaModal";
 
 // Componente funcional para la página de inventario
 const Inventario: React.FC = () => {
