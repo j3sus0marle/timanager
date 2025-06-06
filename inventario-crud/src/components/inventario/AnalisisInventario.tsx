@@ -142,17 +142,6 @@ const AnalisisInventario: React.FC = () => {
     .slice(0, 5);
   const topSalidasSemanaLabels = topSalidasSemanaArr.map(([name]) => name);
   const topSalidasSemanaValues = topSalidasSemanaArr.map(([, value]) => value);
-  const barSalidasSemanaData = {
-    labels: topSalidasSemanaLabels,
-    datasets: [
-      {
-        label: 'Salidas semana',
-        data: topSalidasSemanaValues,
-        backgroundColor: COLORS,
-        borderWidth: 1,
-      },
-    ],
-  };
 
   // Top productos con más salidas en el mes
   const salidasMes = movimientos.filter(mov =>
@@ -170,17 +159,6 @@ const AnalisisInventario: React.FC = () => {
     .slice(0, 5);
   const topSalidasMesLabels = topSalidasMesArr.map(([name]) => name);
   const topSalidasMesValues = topSalidasMesArr.map(([, value]) => value);
-  const barSalidasMesData = {
-    labels: topSalidasMesLabels,
-    datasets: [
-      {
-        label: 'Salidas mes',
-        data: topSalidasMesValues,
-        backgroundColor: COLORS,
-        borderWidth: 1,
-      },
-    ],
-  };
 
   return (
     <div>
