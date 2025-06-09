@@ -1,31 +1,19 @@
-import express from 'express';
-import Cliente from '../models/Cliente';
+import { Router } from 'express';
+import type { Request, Response, NextFunction } from 'express';
+import { getClientes, createCliente, updateCliente, deleteCliente } from '../controllers/clienteController';
 
-const router = express.Router();
+const router = Router();
 
-// Obtener todos los clientes
-router.get('/', async (_, res) => {
-  const clientes = await Cliente.find();
-  res.json(clientes);
-});
+// Helper para manejar errores de funciones async
+function asyncHandler(fn: (req: Request, res: Response, next: NextFunction) => Promise<any>) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+  };
+}
 
-// Crear un nuevo cliente
-router.post('/', async (req, res) => {
-  const nuevo = new Cliente(req.body);
-  await nuevo.save();
-  res.json(nuevo);
-});
-
-// Actualizar un cliente existente
-router.put('/:id', async (req, res) => {
-  const actualizado = await Cliente.findByIdAndUpdate(req.params.id, req.body, { new: true });
-  res.json(actualizado);
-});
-
-// Eliminar un cliente
-router.delete('/:id', async (req, res) => {
-  await Cliente.findByIdAndDelete(req.params.id);
-  res.json({ mensaje: 'Cliente eliminado' });
-});
+router.get('/', asyncHandler(getClientes));
+router.post('/', asyncHandler(createCliente));
+router.put('/:id', asyncHandler(updateCliente));
+router.delete('/:id', asyncHandler(deleteCliente));
 
 export default router;

@@ -1,16 +1,37 @@
-import mongoose from 'mongoose';
+import mongoose, { Schema, Document } from 'mongoose';
 
-const personaSchema = new mongoose.Schema({
-  nombre: String,
-  correo: String,
-  telefono: String,
+export interface IContacto {
+  nombre: string;
+  puesto: string;
+  contacto: {
+    correo: string;
+    telefono: string;
+    extension?: string;
+  };
+}
+
+export interface ICliente extends Document {
+  nombreEmpresa: string;
+  direccion: string;
+  telefono: string;
+  contactos: IContacto[];
+}
+
+const ContactoSchema: Schema = new Schema({
+  nombre: { type: String },
+  puesto: { type: String },
+  contacto: {
+    correo: { type: String },
+    telefono: { type: String },
+    extension: { type: String }
+  }
 });
 
-const clienteSchema = new mongoose.Schema({
-  compania: String,
-  direccion: String,
-  personas: [personaSchema], // arreglo de personas
+const ClienteSchema: Schema = new Schema({
+  nombreEmpresa: { type: String },
+  direccion: { type: String },
+  telefono: { type: String },
+  contactos: { type: [ContactoSchema], default: [] }
 });
 
-const Cliente = mongoose.model('Cliente', clienteSchema);
-export default Cliente;
+export default mongoose.model<ICliente>('Cliente', ClienteSchema);

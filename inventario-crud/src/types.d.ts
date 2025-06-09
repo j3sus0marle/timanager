@@ -42,9 +42,20 @@ export interface Persona {
   telefono: string;
 }
 
+export interface IContacto {
+  nombre: string;
+  puesto: string;
+  contacto: {
+    correo: string;
+    telefono: string;
+    extension?: string;
+  };
+}
+
 export interface Cliente {
   _id?: string;
-  compania: string;
+  nombreEmpresa: string;
   direccion: string;
-  personas: Persona[];
+  telefono: string;
+  contactos: IContacto[];
 }
