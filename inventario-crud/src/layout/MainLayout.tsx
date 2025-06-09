@@ -16,7 +16,8 @@ const MainLayout: React.FC = () => {
     { path: "/clientes", label: "Clientes" },
     { path: "/vendedores", label: "Vendedores" },
     { path: "/mat-elec", label: "Material Electrico" },
-    { path: "/inventario", label: "Inventario" },
+    { path: "/inventario", label: "Inventario Interior" },
+    { path: "/inventarioExterior", label: "Inventario Exterior" },
   ];
 
   return (

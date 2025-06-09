@@ -9,6 +9,7 @@ import Clientes from "./pages/Clientes";
 import Vendedores from "./pages/Vendedores";
 import Productos from "./pages/Mat-elec";
 import Inventario from "./pages/Inventario";
+import InventarioExterior from "./pages/InventarioExterior";
 
 
 function App() {
@@ -25,6 +26,7 @@ function App() {
           <Route path="vendedores" element={<Vendedores />} />
           <Route path="mat-elec" element={<Productos />} />
           <Route path="inventario" element={<Inventario />} />
+          <Route path="inventarioExterior" element={<InventarioExterior />} />
         </Route>
       </Routes>
     </Router>

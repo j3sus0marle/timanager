@@ -8,6 +8,8 @@ import vendedoresRoutes from './routes/vendedores'
 import clienteRoutes from './routes/clientes';
 import inventoryRoutes from "./routes/inventoryRoutes";
 import inventoryMovementsRoutes from "./routes/inventoryMovementsRoutes";
+import inventoryExteriorRoutes from "./routes/inventoryExteriorRoutes";
+import inventoryMovementsExteriorRoutes from "./routes/inventoryMovementsExteriorRoutes";
 
 dotenv.config();
 const app: Application = express();
@@ -23,6 +25,8 @@ app.use('/api/vendedores', vendedoresRoutes);
 app.use('/api/clientes', clienteRoutes);
 app.use("/api/inventario", inventoryRoutes);
 app.use("/api/inventory-movements", inventoryMovementsRoutes);
+app.use("/api/inventario-exterior", inventoryExteriorRoutes);
+app.use("/api/inventory-movements-exterior", inventoryMovementsExteriorRoutes);
 
 const PORT = process.env.PORT || 6051;
 app.listen(PORT, () => console.log(`Servidor corriendo en el puerto ${PORT}`));
