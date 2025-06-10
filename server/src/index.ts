@@ -10,6 +10,10 @@ import inventoryMovementsRoutes from "./routes/inventoryMovementsRoutes";
 import inventoryExteriorRoutes from "./routes/inventoryExteriorRoutes";
 import inventoryMovementsExteriorRoutes from "./routes/inventoryMovementsExteriorRoutes";
 import clientesRoutes from "./routes/clientes";
+import guiasRoutes from "./routes/guias";
+import notificationConfigRoutes from "./routes/notificationConfigRoutes";
+import { revisarYNotificarGuias } from "./notificacionService";
+import "./cronNotificaciones";
 
 dotenv.config();
 const app: Application = express();
@@ -27,6 +31,23 @@ app.use("/api/inventory-movements", inventoryMovementsRoutes);
 app.use("/api/inventario-exterior", inventoryExteriorRoutes);
 app.use("/api/inventory-movements-exterior", inventoryMovementsExteriorRoutes);
 app.use("/api/clientes", clientesRoutes);
+app.use("/api/guias", guiasRoutes);
+app.use("/api/notification-config", notificationConfigRoutes);
+
+app.post("/api/notificar-guias", async (req, res) => {
+  try {
+    if (req.headers["x-force-notify-between"] === "1") {
+      process.env.FORCE_NOTIFY_BETWEEN = "1";
+    } else {
+      process.env.FORCE_NOTIFY_BETWEEN = undefined;
+    }
+    await revisarYNotificarGuias();
+    process.env.FORCE_NOTIFY_BETWEEN = undefined;
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: "Error enviando notificaciones" });
+  }
+});
 
 const PORT = process.env.PORT || 6051;
 app.listen(PORT, () => console.log(`Servidor corriendo en el puerto ${PORT}`));

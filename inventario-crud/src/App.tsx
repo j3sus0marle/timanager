@@ -10,6 +10,7 @@ import Vendedores from "./pages/Vendedores";
 import Productos from "./pages/Mat-elec";
 import Inventario from "./pages/Inventario";
 import InventarioExterior from "./pages/InventarioExterior";
+import Guias from "./pages/Guias";
 
 
 function App() {
@@ -27,6 +28,8 @@ function App() {
           <Route path="mat-elec" element={<Productos />} />
           <Route path="inventario" element={<Inventario />} />
           <Route path="inventarioExterior" element={<InventarioExterior />} />
+          <Route path="guias" element={<Guias />} />
+          {/* Redirigir cualquier ruta desconocida al dashboard */}
         </Route>
       </Routes>
     </Router>

@@ -11,6 +11,7 @@ const MainLayout: React.FC = () => {
   const navItems = [
     { path: "/dashboard", label: "Dashboard" },
     { path: "/proyectos", label: "Proyectos" },
+    { path: "/guias", label: "Guias" },
     { path: "/cotizaciones", label: "Cotizaciones" },
     { path: "/cotizaciones-electricas", label: "Cotizaciones Eléctricas" },
     { path: "/clientes", label: "Clientes" },

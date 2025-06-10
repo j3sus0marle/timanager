@@ -1,0 +1,9 @@
+{
+  "emails": [
+    "ventas1@tiservicesmxli.com"
+  ],
+  "notifyOneDayBefore": true,
+  "notifyOnDeliveryDay": true,
+  "notifyWhenLate": true,
+  "lateFrequencyDays": 2
+}

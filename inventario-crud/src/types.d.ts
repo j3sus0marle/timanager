@@ -59,3 +59,14 @@ export interface Cliente {
   telefono: string;
   contactos: IContacto[];
 }
+
+export interface Guia {
+  _id?: string;
+  numeroGuia: string;
+  proveedor: string;
+  paqueteria: string;
+  fechaPedido: string;
+  fechaLlegada: string;
+  proyectos: string[];
+  estado: 'entregado' | 'no entregado' | 'en transito' | 'atrasado';
+}
