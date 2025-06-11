@@ -6,3 +6,8 @@
 
 # Evitar dependencias duplicadas (si tienes `node_modules` en la raíz)
 node_modules/
+
+
+# Ignorar archivos de configuración específicos del entorno
+server/.env
+inventario-crud/.env
