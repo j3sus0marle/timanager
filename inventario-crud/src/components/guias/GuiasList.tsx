@@ -15,6 +15,7 @@ const emptyGuia: Guia = {
   fechaLlegada: "",
   proyectos: [],
   estado: "no entregado",
+  comentarios: "", // Nuevo campo
 };
 
 const GuiasList: React.FC = () => {
@@ -102,6 +103,7 @@ const GuiasList: React.FC = () => {
         default: return g.estado;
       }
     } },
+    { key: "comentarios", label: "Comentarios" }, // Nuevo campo en la tabla
   ];
 
   const totalPages = Math.ceil(filteredGuias.length / itemsPerPage);
@@ -185,6 +187,12 @@ const GuiasList: React.FC = () => {
                   <option value="en transito">En tránsito</option>
                   <option value="atrasado">Atrasado</option>
                 </Form.Select>
+              </Col>
+            </Row>
+            <Row>
+              <Col md={12} className="mb-3">
+                <Form.Label>Comentarios</Form.Label>
+                <Form.Control as="textarea" rows={2} value={newGuia.comentarios || ""} onChange={e => setNewGuia({ ...newGuia, comentarios: e.target.value })} />
               </Col>
             </Row>
           </Form>
