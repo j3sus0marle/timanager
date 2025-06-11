@@ -112,4 +112,18 @@ router.post('/update-user', authMiddleware, async (req: Request, res: Response) 
   }
 });
 
+// DELETE /delete-user
+router.delete('/delete-user', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const user = await User.findOneAndDelete({ username: (req as any).user.username });
+    if (!user) {
+      res.status(404).json({ message: 'Usuario no encontrado' });
+      return;
+    }
+    res.json({ message: 'Usuario eliminado correctamente' });
+  } catch (err) {
+    res.status(500).json({ message: 'Error al eliminar usuario' });
+  }
+});
+
 export default router;

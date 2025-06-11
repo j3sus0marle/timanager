@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { useNavigate } from 'react-router-dom';
 
 const API_URL = import.meta.env.VITE_API_URL + "auth";
 
@@ -9,6 +10,7 @@ export default function Register({ onRegister }: { onRegister: () => void }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,6 +22,7 @@ export default function Register({ onRegister }: { onRegister: () => void }) {
       setUsername('');
       setPassword('');
       onRegister();
+      setTimeout(() => navigate('/login'), 1200);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Error al registrar');
     }

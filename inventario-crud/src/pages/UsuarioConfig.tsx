@@ -41,6 +41,26 @@ export default function UsuarioConfig({ username, onUpdate }: { username: string
     }
   };
 
+  const handleDelete = async () => {
+    if (!window.confirm('¿Estás seguro de que deseas borrar este usuario? Esta acción no se puede deshacer.')) return;
+    setError('');
+    setSuccess('');
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`${API_URL}/delete-user`, token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);
+      setSuccess('Usuario eliminado correctamente.');
+      setTimeout(() => {
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+      }, 1200);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Error al eliminar usuario');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="container mt-5">
       <div className="card shadow p-4 mx-auto" style={{ maxWidth: 420 }}>
@@ -90,8 +110,11 @@ export default function UsuarioConfig({ username, onUpdate }: { username: string
               required={editPassword}
             />
           </div>
-          <button type="submit" className="btn w-100" style={{ backgroundColor: '#495057', color: '#fff' }} disabled={loading}>
+          <button type="submit" className="btn w-100 mb-2" style={{ backgroundColor: '#495057', color: '#fff' }} disabled={loading}>
             {loading ? 'Guardando...' : 'Guardar cambios'}
+          </button>
+          <button type="button" className="btn btn-danger w-100" onClick={handleDelete} disabled={loading}>
+            Borrar usuario
           </button>
         </form>
         {success && <div className="alert alert-success mt-3 mb-0 py-2 text-center">{success}</div>}
