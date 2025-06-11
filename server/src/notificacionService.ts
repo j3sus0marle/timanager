@@ -49,6 +49,7 @@ export async function revisarYNotificarGuias() {
   if (!config || !config.emails || config.emails.length === 0) return;
 
   const hoy = dayjs();
+  const haceUnaSemana = hoy.subtract(7, 'day');
   const guias = await Guia.find({});
 
   // Agrupar guías por estado relevante
@@ -58,15 +59,21 @@ export async function revisarYNotificarGuias() {
   const noEntregadas: any[] = [];
 
   for (const guia of guias) {
+    if (guia.estado === 'entregado') {
+      // Solo notificar si fue entregada hace menos de 1 semana
+      if (guia.fechaLlegada && dayjs(guia.fechaLlegada).isAfter(haceUnaSemana)) {
+        entregadas.push(guia);
+      }
+      // Si fue entregada hace más de 1 semana, no notificar
+      continue;
+    }
+    // Notificar siempre si no es entregado
     switch (guia.estado) {
       case 'en transito':
         enTransito.push(guia);
         break;
       case 'atrasado':
         atrasadas.push(guia);
-        break;
-      case 'entregado':
-        entregadas.push(guia);
         break;
       case 'no entregado':
         noEntregadas.push(guia);
