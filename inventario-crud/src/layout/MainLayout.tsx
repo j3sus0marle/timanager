@@ -1,11 +1,12 @@
 // src/layout/MainLayout.tsx
-import { Link, Outlet, useLocation } from "react-router-dom";
-import "./MainLayout.css"; // puedes usar Bootstrap o tu propio CSS
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+import "./MainLayout.css";
 import { useState } from "react";
-import { FaBars } from "react-icons/fa";
+import { FaBars, FaCog } from "react-icons/fa";
 
-const MainLayout: React.FC = () => {
+const MainLayout: React.FC<{ username?: string | null, onLogout?: () => void }> = ({ username, onLogout }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
 
   const navItems = [
@@ -21,6 +22,11 @@ const MainLayout: React.FC = () => {
     { path: "/inventarioExterior", label: "Inventario Exterior" },
   ];
 
+  const handleLogout = () => {
+    if (onLogout) onLogout();
+    navigate('/login');
+  };
+
   return (
     <div className="d-flex vh-100">
       {/* Botón hamburguesa para móviles */}
@@ -34,6 +40,22 @@ const MainLayout: React.FC = () => {
       <nav
         className={`main-nav bg-dark text-white p-3 ${menuOpen ? "open" : ""}`}
       >
+        {/* Usuario arriba del menú y del título */}
+        {username && (
+          <div className="user-info mb-3 text-center border-bottom pb-2 d-flex flex-column align-items-center">
+            <div className="d-flex align-items-center justify-content-center gap-2">
+              <div>Usuario: <b>{username}</b></div>
+              <button
+                className="btn btn-link p-0 ms-2"
+                title="Configuración de usuario"
+                style={{ color: '#495057' }}
+                onClick={() => navigate('/usuario')}
+              >
+                <FaCog size={18} />
+              </button>
+            </div>
+          </div>
+        )}
         <h4 className="text-center mb-4">Menú</h4>
         <ul className="nav flex-column">
           {navItems.map((item) => (
@@ -50,6 +72,12 @@ const MainLayout: React.FC = () => {
             </li>
           ))}
         </ul>
+        {/* Botón de logout al final */}
+        {username && (
+          <div className="user-info mt-4 text-center">
+            <button className="btn btn-sm btn-danger mt-2" onClick={handleLogout}>Cerrar sesión</button>
+          </div>
+        )}
       </nav>
 
       <main className="flex-grow-1 p-4 overflow-auto">

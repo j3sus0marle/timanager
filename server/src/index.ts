@@ -14,6 +14,8 @@ import guiasRoutes from "./routes/guias";
 import notificationConfigRoutes from "./routes/notificationConfigRoutes";
 import { revisarYNotificarGuias } from "./notificacionService";
 import "./cronNotificaciones";
+import authRoutes from './routes/auth';
+import { authMiddleware } from './routes/auth';
 
 dotenv.config();
 const app: Application = express();
@@ -33,6 +35,7 @@ app.use("/api/inventory-movements-exterior", inventoryMovementsExteriorRoutes);
 app.use("/api/clientes", clientesRoutes);
 app.use("/api/guias", guiasRoutes);
 app.use("/api/notification-config", notificationConfigRoutes);
+app.use('/api/auth', authRoutes);
 
 app.post("/api/notificar-guias", async (req, res) => {
   try {
@@ -48,6 +51,8 @@ app.post("/api/notificar-guias", async (req, res) => {
     res.status(500).json({ error: "Error enviando notificaciones" });
   }
 });
+
+// Para proteger rutas, usa: app.use('/api/loquesea', authMiddleware, rutasProtegidas)
 
 const PORT = process.env.PORT || 6051;
 app.listen(PORT, () => console.log(`Servidor corriendo en el puerto ${PORT}`));
