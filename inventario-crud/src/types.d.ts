@@ -69,4 +69,5 @@ export interface Guia {
   fechaLlegada: string;
   proyectos: string[];
   estado: 'entregado' | 'no entregado' | 'en transito' | 'atrasado';
+  comentarios?: string; // Nuevo campo
 }

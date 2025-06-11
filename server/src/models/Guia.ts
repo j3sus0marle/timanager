@@ -8,6 +8,7 @@ export interface IGuia extends Document {
   fechaLlegada: Date;
   proyectos: string[];
   estado: 'entregado' | 'no entregado' | 'en transito' | 'atrasado';
+  comentarios?: string; // Nuevo campo
 }
 
 const GuiaSchema: Schema = new Schema({
@@ -18,6 +19,7 @@ const GuiaSchema: Schema = new Schema({
   fechaLlegada: { type: Date,  },
   proyectos: { type: [String], default: [] },
   estado: { type: String, enum: ['entregado', 'no entregado', 'en transito', 'atrasado'],  },
+  comentarios: { type: String, default: '' }, // Nuevo campo
 });
 
 export default mongoose.model<IGuia>('Guia', GuiaSchema);
