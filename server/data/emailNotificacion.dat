@@ -1,7 +1,5 @@
 {
-  "emails": [
-    "saul.daniel@tiservicesmxli.com"
-  ],
+  "emails": [],
   "notifyOneDayBefore": true,
   "notifyOnDeliveryDay": true,
   "notifyWhenLate": true,

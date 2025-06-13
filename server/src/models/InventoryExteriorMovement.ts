@@ -5,6 +5,8 @@ export interface IInventoryExteriorMovement extends Document {
   tipo: "entrada" | "salida";
   cantidad: number;
   fecha: Date;
+  comentario?: string; // Nuevo campo opcional
+  usuario?: string; // Nuevo campo para el usuario
 }
 
 const InventoryExteriorMovementSchema = new Schema<IInventoryExteriorMovement>({
@@ -12,6 +14,8 @@ const InventoryExteriorMovementSchema = new Schema<IInventoryExteriorMovement>({
   tipo: { type: String, enum: ["entrada", "salida"], },
   cantidad: { type: Number, },
   fecha: { type: Date, default: Date.now },
+  comentario: { type: String }, // Nuevo campo
+  usuario: { type: String }, // Nuevo campo
 });
 
 export const InventoryExteriorMovement = mongoose.model<IInventoryExteriorMovement>(

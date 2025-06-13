@@ -93,11 +93,14 @@ const Inventario: React.FC = () => {
         // Registrar movimiento si la cantidad cambió
         const cantidadEditada = newItem.cantidad - cantidadOriginal;
         if (cantidadEditada !== 0) {
+          const token = localStorage.getItem('token');
           await axios.post(urlMovimientos, {
             itemId: editItemId,
             tipo: cantidadEditada > 0 ? "entrada" : "salida",
             cantidad: Math.abs(cantidadEditada),
             fecha: new Date(),
+          }, {
+            headers: { Authorization: `Bearer ${token}` }
           });
         }
       } else {
@@ -105,11 +108,14 @@ const Inventario: React.FC = () => {
         const res = await axios.post<IInventoryItem>(urlServer, { ...newItem });
         // Registrar movimiento de entrada si la cantidad es mayor a 0
         if (newItem.cantidad > 0 && res.data && res.data._id) {
+          const token = localStorage.getItem('token');
           await axios.post(urlMovimientos, {
             itemId: res.data._id,
             tipo: "entrada",
             cantidad: newItem.cantidad,
             fecha: new Date(),
+          }, {
+            headers: { Authorization: `Bearer ${token}` }
           });
         }
       }
@@ -145,12 +151,15 @@ const Inventario: React.FC = () => {
     try {
       // Obtener el item antes de eliminar para registrar el movimiento
       const item = items.find(i => i._id === id);
-            if (item && item.cantidad > 0) {
+      const token = localStorage.getItem('token');
+      if (item && item.cantidad > 0) {
         await axios.post(urlMovimientos, {
           itemId: id,
           tipo: "salida",
           cantidad: item.cantidad,
           fecha: new Date(),
+        }, {
+          headers: { Authorization: `Bearer ${token}` }
         });
       }
       await axios.delete(urlServer + id);
@@ -185,7 +194,8 @@ const Inventario: React.FC = () => {
   };
 
   // Lógica para realizar la baja
-  const handleBaja = async (item: IInventoryItem, cantidad: number) => {
+  const handleBaja = async (item: IInventoryItem, cantidad: number, comentario: string) => {
+    const token = localStorage.getItem('token');
     try {
       await axios.put(urlServer + item._id, {
         ...item,
@@ -197,6 +207,9 @@ const Inventario: React.FC = () => {
         tipo: "salida",
         cantidad,
         fecha: new Date(),
+        comentario,
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
       });
       fetchItems();
     } catch (error) {
@@ -204,11 +217,11 @@ const Inventario: React.FC = () => {
     }
   };
 
-  // Lógica para alta desde escaneo
-  const handleAlta = async (item: IInventoryItem | null, sn: string) => {
+  // Lógica para alta desde escaneo o manual
+  const handleAlta = async (item: IInventoryItem | null, sn: string, cantidad: number, comentario: string) => {
+    const token = localStorage.getItem('token');
     if (item) {
       try {
-        // Encuentra el item original antes de actualizar
         const original = items.find(i => i._id === item._id);
         const cantidadOriginal = original ? original.cantidad : 0;
         await axios.put(urlServer + item._id, {
@@ -223,6 +236,9 @@ const Inventario: React.FC = () => {
             tipo: "entrada",
             cantidad: cantidadAgregada,
             fecha: new Date(),
+            comentario,
+          }, {
+            headers: { Authorization: `Bearer ${token}` }
           });
         }
         fetchItems();
@@ -238,10 +254,11 @@ const Inventario: React.FC = () => {
         proveedor: "",
         unidad: "PZA",
         precioUnitario: 0,
-        cantidad: 1,
+        cantidad: cantidad,
         numerosSerie: [sn],
         categorias: [],
       });
+      // Registrar movimiento de entrada para nuevo artículo se hace en handleSaveItem
     }
   };
 
@@ -506,11 +523,13 @@ const Inventario: React.FC = () => {
                 <th>Producto</th>
                 <th>Marca</th>
                 <th>Modelo</th>
+                <th>Comentario</th>
+                <th>Usuario</th>
               </tr>
             </thead>
             <tbody>
               {paginatedMovs.length === 0 && (
-                <tr><td colSpan={6} className="text-center">Sin movimientos</td></tr>
+                <tr><td colSpan={8} className="text-center">Sin movimientos</td></tr>
               )}
               {paginatedMovs.map((mov, idx) => {
                 const item = mov.itemId || {};
@@ -522,6 +541,8 @@ const Inventario: React.FC = () => {
                     <td>{item.descripcion || "-"}</td>
                     <td>{item.marca || "-"}</td>
                     <td>{item.modelo || "-"}</td>
+                    <td>{mov.comentario || "-"}</td>
+                    <td>{mov.usuario || "-"}</td>
                   </tr>
                 );
               })}

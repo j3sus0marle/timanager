@@ -1,16 +1,18 @@
 import express, { Request, Response } from "express";
 import { InventoryExteriorMovement } from "../models/InventoryExteriorMovement";
 import { InventoryExteriorItem } from "../models/InventoryExteriorItem";
+import { authMiddleware } from "./auth";
 
 const router = express.Router();
 
 // Crear un movimiento de inventario exterior
-router.post("/", (req: Request, res: Response) => {
-  const { itemId, tipo, cantidad, fecha } = req.body;
+router.post("/", authMiddleware, (req: Request, res: Response) => {
+  const { itemId, tipo, cantidad, fecha, comentario } = req.body;
+  const usuario = (req as any).user?.username || "";
   InventoryExteriorItem.findById(itemId)
     .then((item) => {
       if (!item) return res.status(404).json({ error: "Item no encontrado" });
-      InventoryExteriorMovement.create({ itemId, tipo, cantidad, fecha })
+      InventoryExteriorMovement.create({ itemId, tipo, cantidad, fecha, comentario, usuario })
         .then((movimiento) => res.status(201).json(movimiento))
         .catch(() => res.status(500).json({ error: "Error al registrar movimiento" }));
     })

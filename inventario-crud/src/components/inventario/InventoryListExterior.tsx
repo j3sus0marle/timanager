@@ -95,6 +95,7 @@ const InventoryListExterior: React.FC = () => {
   // Guardar (crear o editar) un artículo
   const handleSaveItem = async () => {
     try {
+      const token = localStorage.getItem('token');
       if (editItemId) {
         const original = items.find(i => i._id === editItemId);
         const cantidadOriginal = original ? original.cantidad : 0;
@@ -106,6 +107,8 @@ const InventoryListExterior: React.FC = () => {
             tipo: cantidadEditada > 0 ? "entrada" : "salida",
             cantidad: Math.abs(cantidadEditada),
             fecha: new Date(),
+          }, {
+            headers: { Authorization: `Bearer ${token}` }
           });
         }
       } else {
@@ -116,6 +119,8 @@ const InventoryListExterior: React.FC = () => {
             tipo: "entrada",
             cantidad: newItem.cantidad,
             fecha: new Date(),
+          }, {
+            headers: { Authorization: `Bearer ${token}` }
           });
         }
       }
@@ -148,6 +153,7 @@ const InventoryListExterior: React.FC = () => {
     const confirmed = window.confirm("¿Estás seguro de que deseas eliminar este artículo? Esta acción no se puede deshacer.");
     if (!confirmed) return;
     try {
+      const token = localStorage.getItem('token');
       const item = items.find(i => i._id === id);
       if (item && item.cantidad > 0) {
         await axios.post(urlMovimientos, {
@@ -155,6 +161,8 @@ const InventoryListExterior: React.FC = () => {
           tipo: "salida",
           cantidad: item.cantidad,
           fecha: new Date(),
+        }, {
+          headers: { Authorization: `Bearer ${token}` }
         });
       }
       await axios.delete(urlServer + id);
@@ -186,7 +194,8 @@ const InventoryListExterior: React.FC = () => {
   };
 
   // Lógica para realizar la baja
-  const handleBaja = async (item: IInventoryItem, cantidad: number) => {
+  const handleBaja = async (item: IInventoryItem, cantidad: number, comentario: string) => {
+    const token = localStorage.getItem('token');
     try {
       await axios.put(urlServer + item._id, {
         ...item,
@@ -197,6 +206,9 @@ const InventoryListExterior: React.FC = () => {
         tipo: "salida",
         cantidad,
         fecha: new Date(),
+        comentario,
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
       });
       fetchItems();
     } catch (error) {
@@ -204,15 +216,16 @@ const InventoryListExterior: React.FC = () => {
     }
   };
 
-  // Lógica para alta desde escaneo
-  const handleAlta = async (item: IInventoryItem | null, sn: string) => {
+  // Lógica para alta desde escaneo o manual
+  const handleAlta = async (item: IInventoryItem | null, sn: string, cantidad: number, comentario: string) => {
+    const token = localStorage.getItem('token');
     if (item) {
       try {
         const original = items.find(i => i._id === item._id);
         const cantidadOriginal = original ? original.cantidad : 0;
         await axios.put(urlServer + item._id, {
           ...item,
-          cantidad: item.cantidad,
+          cantidad: item.cantidad, // La cantidad ya viene sumada desde AltaModal
         });
         const cantidadAgregada = item.cantidad - cantidadOriginal;
         if (cantidadAgregada > 0) {
@@ -221,6 +234,9 @@ const InventoryListExterior: React.FC = () => {
             tipo: "entrada",
             cantidad: cantidadAgregada,
             fecha: new Date(),
+            comentario,
+          }, {
+            headers: { Authorization: `Bearer ${token}` }
           });
         }
         fetchItems();
@@ -236,10 +252,11 @@ const InventoryListExterior: React.FC = () => {
         proveedor: "",
         unidad: "PZA",
         precioUnitario: 0,
-        cantidad: 1,
+        cantidad: cantidad,
         numerosSerie: [sn],
         categorias: [],
       });
+      // Registrar movimiento de entrada para nuevo artículo se hace en handleSaveItem
     }
   };
 
@@ -463,11 +480,13 @@ const InventoryListExterior: React.FC = () => {
                 <th>Producto</th>
                 <th>Marca</th>
                 <th>Modelo</th>
+                <th>Comentario</th>
+                <th>Usuario</th>
               </tr>
             </thead>
             <tbody>
               {paginatedMovs.length === 0 && (
-                <tr><td colSpan={6} className="text-center">Sin movimientos</td></tr>
+                <tr><td colSpan={8} className="text-center">Sin movimientos</td></tr>
               )}
               {paginatedMovs.map((mov, idx) => {
                 const item = mov.itemId || {};
@@ -479,6 +498,8 @@ const InventoryListExterior: React.FC = () => {
                     <td>{item.descripcion || "-"}</td>
                     <td>{item.marca || "-"}</td>
                     <td>{item.modelo || "-"}</td>
+                    <td>{mov.comentario || "-"}</td>
+                    <td>{mov.usuario || "-"}</td>
                   </tr>
                 );
               })}

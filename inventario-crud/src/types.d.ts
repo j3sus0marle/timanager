@@ -34,6 +34,8 @@ export interface IInventoryMovement {
   tipo: "entrada" | "salida";
   cantidad: number;
   fecha: string;
+  comentario?: string;
+  usuario?: string;
 }
 
 export interface Persona {
