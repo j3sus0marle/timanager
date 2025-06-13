@@ -11,6 +11,6 @@ export default defineConfig({
     hmr: {
       clientPort: 80, // Evita problemas con WebSocket en Vite HMR
     },
-    allowedHosts: ['cotizador.com', 'localhost'], // Permite estos dominios
+    allowedHosts: ['www.timanager.com', 'localhost'], // Permite estos dominios
   },
 })
