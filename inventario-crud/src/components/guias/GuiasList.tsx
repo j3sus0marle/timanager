@@ -138,8 +138,8 @@ const GuiasList: React.FC = () => {
     { key: "numeroGuia", label: "Núm. Guía" },
     { key: "proveedor", label: "Proveedor" },
     { key: "paqueteria", label: "Paquetería" },
-    { key: "fechaPedido", label: "Fecha Pedido", render: g => g.fechaPedido ? new Date(g.fechaPedido).toLocaleDateString() : "" },
-    { key: "fechaLlegada", label: "Fecha Llegada", render: g => g.fechaLlegada ? new Date(g.fechaLlegada).toLocaleDateString() : "" },
+    { key: "fechaPedido", label: "Fecha Pedido", render: g => g.fechaPedido ? g.fechaPedido.slice(0,10) : "" },
+    { key: "fechaLlegada", label: "Fecha Llegada", render: g => g.fechaLlegada ? g.fechaLlegada.slice(0,10) : "" },
     { key: "proyectos", label: "Proyectos", render: g => g.proyectos.join(", ") },
     { key: "estado", label: "Estado", render: g => {
       switch (g.estado) {
