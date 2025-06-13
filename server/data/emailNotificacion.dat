@@ -1,5 +1,8 @@
 {
-  "emails": [],
+  "emails": [
+    "sorozcocuevas@gmail.com",
+    "saul.daniel@tiservicesmxli.com"
+  ],
   "notifyOneDayBefore": true,
   "notifyOnDeliveryDay": true,
   "notifyWhenLate": true,
