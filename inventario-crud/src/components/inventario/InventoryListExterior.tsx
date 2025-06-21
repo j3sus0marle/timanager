@@ -39,6 +39,8 @@ const InventoryListExterior: React.FC = () => {
   const [movDesde, setMovDesde] = useState("");
   const [movHasta, setMovHasta] = useState("");
   const [movPage, setMovPage] = useState(1);
+  const [isSaving, setIsSaving] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Cambia SOLO las rutas a inventario-exterior y movimientos-exterior
   const urlServer = import.meta.env.VITE_API_URL + "inventario-exterior/";
@@ -94,6 +96,8 @@ const InventoryListExterior: React.FC = () => {
 
   // Guardar (crear o editar) un artículo
   const handleSaveItem = async () => {
+    setIsSaving(true);
+    setErrorMessage(null);
     try {
       const token = localStorage.getItem('token');
       if (editItemId) {
@@ -127,8 +131,10 @@ const InventoryListExterior: React.FC = () => {
       setShowModal(false);
       resetModalState();
       fetchItems();
-    } catch (error) {
-      console.error("Error al guardar el item exterior:", error);
+    } catch (error: any) {
+      setErrorMessage(error?.response?.data?.message || "Error al guardar el item exterior");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -417,11 +423,14 @@ const InventoryListExterior: React.FC = () => {
         onHide={() => {
           setShowModal(false);
           resetModalState();
+          setErrorMessage(null);
         }}
         onSave={handleSaveItem}
         item={newItem}
         setItem={setNewItem}
         isEdit={!!editItemId}
+        isSaving={isSaving}
+        errorMessage={errorMessage ?? undefined}
       />
       <BajaModal
         show={showBajaModal}

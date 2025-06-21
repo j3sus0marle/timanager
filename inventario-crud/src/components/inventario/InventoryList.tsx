@@ -52,6 +52,10 @@ const Inventario: React.FC = () => {
   const [movHasta, setMovHasta] = useState("");
   // Estado para la paginación de movimientos
   const [movPage, setMovPage] = useState(1);
+  // Estado para el guardado de artículos
+  const [isSaving, setIsSaving] = useState(false);
+  // Estado para mensajes de error
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const urlServer = import.meta.env.VITE_API_URL + "inventario/";
   const urlMovimientos = import.meta.env.VITE_API_URL + "inventory-movements";
@@ -84,6 +88,8 @@ const Inventario: React.FC = () => {
 
   // Guardar (crear o editar) un artículo
   const handleSaveItem = async () => {
+    setIsSaving(true);
+    setErrorMessage(null);
     try {
       if (editItemId) {
         // Obtener el item original antes de editar
@@ -122,8 +128,10 @@ const Inventario: React.FC = () => {
       setShowModal(false);
       resetModalState();
       fetchItems();
-    } catch (error) {
-      console.error("Error al guardar el item:", error);
+    } catch (error: any) {
+      setErrorMessage(error?.response?.data?.message || "Error al guardar el item");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -454,11 +462,14 @@ const Inventario: React.FC = () => {
         onHide={() => {
           setShowModal(false);
           resetModalState();
+          setErrorMessage(null);
         }}
         onSave={handleSaveItem}
         item={newItem}
         setItem={setNewItem}
         isEdit={!!editItemId}
+        isSaving={isSaving}
+        errorMessage={errorMessage ?? undefined}
       />
 
       {/* Modal para dar de baja artículos */}

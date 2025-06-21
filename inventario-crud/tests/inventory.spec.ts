@@ -1,7 +1,24 @@
 import { test, expect } from '@playwright/test';
 
+// @ts-ignore
+const USER = process.env.TEST_USER;
+// @ts-ignore
+const PASS = process.env.TEST_PASS;
+
+if (!USER || !PASS) {
+  throw new Error('TEST_USER and TEST_PASS environment variables must be set');
+}
+
 test('CRUD de inventario', async ({ page }) => {
-  // Cambia la URL y ruta según tu frontend
+  // Login antes de acceder a inventario
+  await page.goto('http://localhost/login');
+  await page.getByPlaceholder('Usuario').fill(USER);
+  await page.getByPlaceholder('Contraseña').fill(PASS);
+  await page.getByRole('button', { name: /Entrar/i }).click();
+  // Espera a que desaparezca el formulario de login
+  await page.waitForURL('**/dashboard', { timeout: 10000 }).catch(() => {});
+
+  // Ahora navega a inventario
   await page.goto('http://localhost/inventario');
   await page.waitForLoadState('networkidle');
 

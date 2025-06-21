@@ -9,6 +9,8 @@ interface ItemModalProps {
   item: IInventoryItem;
   setItem: (item: IInventoryItem) => void;
   isEdit?: boolean;
+  isSaving?: boolean;
+  errorMessage?: string;
 }
 
 const categorias = [
@@ -20,7 +22,7 @@ const categorias = [
   "Videovigilancia",
 ];
 
-const ItemModal: React.FC<ItemModalProps> = ({ show, onHide, onSave, item, setItem, isEdit }) => {
+const ItemModal: React.FC<ItemModalProps> = ({ show, onHide, onSave, item, setItem, isEdit, isSaving, errorMessage }) => {
   const handleSerieChange = (index: number, value: string) => {
     const nuevos = [...item.numerosSerie];
     nuevos[index] = value;
@@ -45,6 +47,12 @@ const ItemModal: React.FC<ItemModalProps> = ({ show, onHide, onSave, item, setIt
         <Modal.Title>{isEdit ? "Editar Artículo" : "Agregar Artículo al Inventario"}</Modal.Title>
       </Modal.Header>
       <Modal.Body>
+        {/* Mensaje de error */}
+        {errorMessage && (
+          <div className="alert alert-danger" role="alert">
+            {errorMessage}
+          </div>
+        )}
         <Row>
           {[
             { field: "descripcion", label: "Descripción" },
@@ -131,11 +139,11 @@ const ItemModal: React.FC<ItemModalProps> = ({ show, onHide, onSave, item, setIt
         </Row>
       </Modal.Body>
       <Modal.Footer>
-        <Button variant="secondary" onClick={onHide}>
+        <Button variant="secondary" onClick={onHide} disabled={isSaving}>
           Cancelar
         </Button>
-        <Button variant="success" onClick={onSave}>
-          Guardar
+        <Button variant="success" onClick={onSave} disabled={isSaving}>
+          {isSaving ? 'Guardando...' : 'Guardar'}
         </Button>
       </Modal.Footer>
     </Modal>
