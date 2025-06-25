@@ -1,11 +1,12 @@
 // src/App.tsx
-import React, { useState, useEffect, JSX } from 'react';
+import { useState, useEffect, JSX } from 'react';
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import MainLayout from "./layout/MainLayout";
 import Dashboard from "./pages/Dashboard";
 import Proyectos from "./pages/Proyectos";
 import Cotizaciones from "./pages/Cotizaciones";
 import CotizacionesElectricas from "./pages/CotizacionesElectricas";
+import OrdenesCompra from "./pages/OrdenesCompra";
 import Clientes from "./pages/Clientes";
 import Vendedores from "./pages/Vendedores";
 import Productos from "./pages/Mat-elec";
@@ -87,6 +88,7 @@ function App() {
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="proyectos" element={<Proyectos />} />
+          <Route path="ordenes-compra" element={<OrdenesCompra />} />
           <Route path="cotizaciones" element={<Cotizaciones />} />
           <Route path="cotizaciones-electricas" element={<CotizacionesElectricas />} />
           <Route path="clientes" element={<Clientes />} />
@@ -96,6 +98,7 @@ function App() {
           <Route path="inventarioExterior" element={<InventarioExterior />} />
           <Route path="guias" element={<Guias />} />
           <Route path="/usuario" element={<UsuarioConfig username={username || ''} onUpdate={handleUpdateUser} />} />
+
         </Route>
       </Routes>
     </>
