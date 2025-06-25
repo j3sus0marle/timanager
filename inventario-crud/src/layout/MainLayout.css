@@ -44,3 +44,171 @@
       display: none;
     }
   }
+  
+  /* Dropdown animado para submenús */
+.nav-item {
+  position: relative;
+}
+
+.dropdown-menu {
+  position: absolute;
+  left: 100%;
+  top: 0;
+  min-width: 220px;
+  background: #2c3136 !important;
+  border: 1px solid #495057;
+  border-radius: 6px;
+  box-shadow: 2px 2px 12px rgba(0,0,0,0.3);
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 0.75rem 0;
+  margin-left: 0.5rem;
+  list-style: none !important;
+}
+
+.dropdown-menu.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(0);
+}
+
+/* Estilos para los links del submenú */
+.dropdown-menu .nav-link {
+  color: #ffffff !important;
+  background: transparent !important;
+  padding: 0.75rem 1.25rem;
+  transition: all 0.2s;
+  border-radius: 0;
+  font-size: 0.9rem;
+  border: none !important;
+  text-decoration: none !important;
+  display: flex !important;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.dropdown-menu .nav-link:hover {
+  background: #495057 !important;
+  color: #ffffff !important;
+  transform: translateX(4px);
+}
+
+.dropdown-menu .nav-link.fw-bold {
+  background: #007bff !important;
+  color: #ffffff !important;
+}
+
+/* Asegurar que los items del submenú tengan fondo transparente */
+.dropdown-menu .nav-item {
+  background: transparent !important;
+  margin-bottom: 0.25rem !important;
+  list-style: none !important;
+}
+
+/* Override Bootstrap dropdown styles */
+.dropdown-menu .nav-item .nav-link:focus,
+.dropdown-menu .nav-item .nav-link:active {
+  background: #495057 !important;
+  color: #ffffff !important;
+}
+
+/* Flecha indicadora en los botones de grupo */
+.group-toggle {
+  transition: all 0.2s;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.group-toggle:hover {
+  background: rgba(255,255,255,0.1) !important;
+  border-radius: 4px;
+}
+
+.group-toggle .arrow {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.group-toggle[aria-expanded="true"] .arrow {
+  transform: rotate(180deg);
+}
+
+/* Transiciones entre páginas */
+.page-content {
+  position: relative;
+  height: 100%;
+  width: 100%;
+}
+
+.content-wrapper {
+  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+}
+
+.fade-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.fade-out {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+/* Loading overlay */
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  opacity: 1;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.loading-spinner p {
+  margin: 0;
+  color: #495057;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+/* Spinner animation */
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e9ecef;
+  border-top: 3px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Mejorar transición en modo móvil */
+@media (max-width: 768px) {
+  .content-wrapper {
+    transition: opacity 0.25s ease-in-out, transform 0.25s ease-in-out;
+  }
+  
+  .fade-out {
+    transform: translateY(-5px);
+  }
+}

@@ -1,25 +1,88 @@
 // src/layout/MainLayout.tsx
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import "./MainLayout.css";
-import { useState } from "react";
-import { FaBars, FaCog } from "react-icons/fa";
+import { useState, useEffect } from "react";
+import { 
+  FaBars, 
+  FaCog, 
+  FaUser,
+  FaTachometerAlt, 
+  FaBoxes, 
+  FaWarehouse, 
+  FaBolt, 
+  FaProjectDiagram, 
+  FaFileInvoiceDollar, 
+  FaUsers, 
+  FaUserTie, 
+  FaFileAlt, 
+  FaShoppingCart 
+} from "react-icons/fa";
 
 const MainLayout: React.FC<{ username?: string | null, onLogout?: () => void }> = ({ username, onLogout }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
 
-  const navItems = [
-    { path: "/dashboard", label: "Dashboard" },
-    { path: "/proyectos", label: "Proyectos" },
-    { path: "/guias", label: "Guias" },
-    { path: "/cotizaciones", label: "Cotizaciones" },
-    { path: "/cotizaciones-electricas", label: "Cotizaciones Eléctricas" },
-    { path: "/clientes", label: "Clientes" },
-    { path: "/vendedores", label: "Vendedores" },
-    { path: "/mat-elec", label: "Material Electrico" },
-    { path: "/inventario", label: "Inventario Interior" },
-    { path: "/inventarioExterior", label: "Inventario Exterior" },
+  // Estado para controlar qué dropdown está abierto
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+
+  // Efecto para manejar transiciones entre páginas
+  useEffect(() => {
+    setIsLoading(true);
+    setIsVisible(false);
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+      setIsVisible(true);
+    }, 300); // Duración de la transición
+
+    return () => clearTimeout(timer);
+  }, [location.pathname]);
+  const groupedNavItems = [
+    // Dashboard sin agrupar
+    {
+      label: "Dashboard",
+      icon: <FaTachometerAlt size={16} />,
+      items: [
+        { path: "/dashboard", label: "Dashboard", icon: <FaTachometerAlt size={14} /> },
+      ],
+    },
+    // Guías sin agrupar
+    {
+      label: "Guías",
+      icon: <FaFileAlt size={16} />,
+      items: [
+        { path: "/guias", label: "Guías", icon: <FaFileAlt size={14} /> },
+      ],
+    },
+    {
+      label: "Proyectos",
+      icon: <FaProjectDiagram size={16} />,
+      items: [
+        { path: "/proyectos", label: "Control de Proyectos", icon: <FaProjectDiagram size={14} /> },
+        { path: "/ordenes-compra", label: "Órdenes de Compra", icon: <FaShoppingCart size={14} /> },
+        { path: "/cotizaciones", label: "Cotizaciones", icon: <FaFileInvoiceDollar size={14} /> },
+        { path: "/cotizaciones-electricas", label: "Presupuesto Eléctrico", icon: <FaFileInvoiceDollar size={14} /> },
+      ],
+    },
+    {
+      label: "Inventario",
+      icon: <FaBoxes size={16} />,
+      items: [
+        { path: "/inventario", label: "Inventario Interior", icon: <FaWarehouse size={14} /> },
+        { path: "/inventarioExterior", label: "Inventario Exterior", icon: <FaWarehouse size={14} /> },
+      ],
+    },
+    {
+      label: "Bases de Datos",
+      icon: <FaUsers size={16} />,
+      items: [
+        { path: "/clientes", label: "Clientes", icon: <FaUsers size={14} /> },
+        { path: "/vendedores", label: "Vendedores", icon: <FaUserTie size={14} /> },
+        { path: "/mat-elec", label: "Material Eléctrico", icon: <FaBolt size={14} /> },
+      ],
+    },
   ];
 
   const handleLogout = () => {
@@ -44,7 +107,10 @@ const MainLayout: React.FC<{ username?: string | null, onLogout?: () => void }> 
         {username && (
           <div className="user-info mb-3 text-center border-bottom pb-2 d-flex flex-column align-items-center">
             <div className="d-flex align-items-center justify-content-center gap-2">
-              <div>Usuario: <b>{username}</b></div>
+              <div className="d-flex align-items-center gap-2">
+                <FaUser size={16} />
+                <b>{username}</b>
+              </div>
               <button
                 className="btn btn-link p-0 ms-2"
                 title="Configuración de usuario"
@@ -58,17 +124,56 @@ const MainLayout: React.FC<{ username?: string | null, onLogout?: () => void }> 
         )}
         <h4 className="text-center mb-4">Menú</h4>
         <ul className="nav flex-column">
-          {navItems.map((item) => (
-            <li className="nav-item mb-2" key={item.path}>
-              <Link
-                to={item.path}
-                className={`nav-link text-white ${
-                  location.pathname === item.path ? "fw-bold" : ""
-                }`}
-                onClick={() => setMenuOpen(false)}
-              >
-                {item.label}
-              </Link>
+          {groupedNavItems.map((group) => (
+            <li className="nav-item mb-2" key={group.label}>
+              {/* Si el grupo tiene solo un elemento, renderizar como link directo */}
+              {group.items.length === 1 ? (
+                <Link
+                  to={group.items[0].path}
+                  className={`nav-link text-white d-flex align-items-center gap-2 ${location.pathname === group.items[0].path ? "fw-bold" : ""}`}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  {group.items[0].icon}
+                  <span>{group.items[0].label}</span>
+                </Link>
+              ) : (
+                <>
+                  <button
+                    className="group-toggle btn btn-link text-white w-100 text-start d-flex justify-content-between align-items-center"
+                    style={{ textDecoration: 'none' }}
+                    onClick={() => setOpenDropdown(openDropdown === group.label ? null : group.label)}
+                    aria-expanded={openDropdown === group.label}
+                    aria-controls={`dropdown-${group.label}`}
+                    type="button"
+                  >
+                    <div className="d-flex align-items-center gap-2">
+                      {group.icon}
+                      <span>{group.label}</span>
+                    </div>
+                    <span className="arrow" style={{ fontSize: 12 }}>▼</span>
+                  </button>
+                  <ul
+                    className={`dropdown-menu nav flex-column${openDropdown === group.label ? ' show' : ''}`}
+                    id={`dropdown-${group.label}`}
+                  >
+                    {group.items.map((item) => (
+                      <li className="nav-item mb-1" key={item.path}>
+                        <Link
+                          to={item.path}
+                          className={`nav-link text-white d-flex align-items-center gap-2 ${location.pathname === item.path ? "fw-bold" : ""}`}
+                          onClick={() => {
+                            setMenuOpen(false);
+                            setOpenDropdown(null);
+                          }}
+                        >
+                          {item.icon}
+                          <span>{item.label}</span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
             </li>
           ))}
         </ul>
@@ -81,7 +186,19 @@ const MainLayout: React.FC<{ username?: string | null, onLogout?: () => void }> 
       </nav>
 
       <main className="flex-grow-1 p-4 overflow-auto">
-        <Outlet />
+        <div className={`page-content ${isLoading ? 'loading' : 'loaded'}`}>
+          {isLoading && (
+            <div className="loading-overlay">
+              <div className="loading-spinner">
+                <div className="spinner"></div>
+                <p>Cargando...</p>
+              </div>
+            </div>
+          )}
+          <div className={`content-wrapper ${isVisible ? 'fade-in' : 'fade-out'}`}>
+            <Outlet />
+          </div>
+        </div>
       </main>
     </div>
   );
