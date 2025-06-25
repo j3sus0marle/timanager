@@ -46,6 +46,14 @@ const emptyGuia: Guia = {
   comentarios: "", // Nuevo campo
 };
 
+function parseLocalDate(dateStr: string) {
+  // dateStr: "YYYY-MM-DD" o "YYYY-MM-DDTHH:mm:ss"
+  if (!dateStr) return undefined;
+  const [datePart] = dateStr.split('T');
+  const [year, month, day] = datePart.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
 const GuiasList: React.FC = () => {
   const [guias, setGuias] = useState<Guia[]>([]);
   const [filteredGuias, setFilteredGuias] = useState<Guia[]>([]);
@@ -187,8 +195,8 @@ const GuiasList: React.FC = () => {
     if (g.fechaPedido) {
       events.push({
         title: `Pedido: ${g.numeroGuia}`,
-        start: new Date(g.fechaPedido),
-        end: new Date(g.fechaPedido),
+        start: parseLocalDate(g.fechaPedido),
+        end: parseLocalDate(g.fechaPedido),
         allDay: true,
         resource: { tipo: 'pedido', guia: g }
       });
@@ -197,21 +205,30 @@ const GuiasList: React.FC = () => {
     if (g.fechaLlegada) {
       events.push({
         title: `Llegada: ${g.numeroGuia}`,
-        start: new Date(g.fechaLlegada),
-        end: new Date(g.fechaLlegada),
+        start: parseLocalDate(g.fechaLlegada),
+        end: parseLocalDate(g.fechaLlegada),
         allDay: true,
         resource: { tipo: 'llegada', guia: g }
       });
     }
     // Atrasado (si está atrasado y no entregado)
     if (g.estado === 'atrasado' && g.fechaPedido) {
-      // Mostrar como evento de varios días desde pedido hasta hoy
       events.push({
         title: `Atrasado: ${g.numeroGuia}`,
-        start: new Date(g.fechaPedido),
+        start: parseLocalDate(g.fechaPedido),
         end: new Date(),
         allDay: true,
         resource: { tipo: 'atrasado', guia: g }
+      });
+    }
+    // No entregado
+    if (g.estado === 'no entregado' && g.fechaPedido) {
+      events.push({
+        title: `No entregado: ${g.numeroGuia}`,
+        start: parseLocalDate(g.fechaPedido),
+        end: new Date(),
+        allDay: true,
+        resource: { tipo: 'noentregado', guia: g }
       });
     }
     return events;
@@ -227,6 +244,9 @@ const GuiasList: React.FC = () => {
     }
     if (event.resource?.tipo === 'atrasado') {
       return { style: { backgroundColor: '#dc3545', color: 'white', borderRadius: 6, border: '2px solid #dc3545' } };
+    }
+    if (event.resource?.tipo === 'noentregado') {
+      return { style: { backgroundColor: '#ffc107', color: '#333', borderRadius: 6, border: '2px solid #ffc107' } };
     }
     return {};
   };
@@ -301,7 +321,8 @@ const GuiasList: React.FC = () => {
             <div className="mt-3 small">
               <span style={{ background: '#007bff', color: 'white', borderRadius: 4, padding: '2px 8px', marginRight: 8 }}>Pedido</span>
               <span style={{ background: '#28a745', color: 'white', borderRadius: 4, padding: '2px 8px', marginRight: 8 }}>Llegada</span>
-              <span style={{ background: '#dc3545', color: 'white', borderRadius: 4, padding: '2px 8px' }}>Atrasado</span>
+              <span style={{ background: '#dc3545', color: 'white', borderRadius: 4, padding: '2px 8px', marginRight: 8 }}>Atrasado</span>
+              <span style={{ background: '#ffc107', color: '#333', borderRadius: 4, padding: '2px 8px' }}>No entregado</span>
             </div>
           </div>
         </div>
