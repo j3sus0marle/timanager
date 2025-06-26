@@ -42,10 +42,21 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
       res.status(401).json({ message: 'Credenciales inválidas' });
       return;
     }
-    const token = jwt.sign({ username }, process.env.JWT_SECRET || 'secret', { expiresIn: '1d' });
+    // Cambiar la expiración a 2 horas para mayor seguridad
+    const token = jwt.sign({ username }, process.env.JWT_SECRET || 'secret', { expiresIn: '2h' });
     res.json({ token, username });
   } catch (err) {
     res.status(500).json({ message: 'Error al iniciar sesión' });
+  }
+});
+
+// Verificar token
+router.get('/verify-token', authMiddleware, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const user = (req as any).user;
+    res.json({ valid: true, username: user.username });
+  } catch (err) {
+    res.status(401).json({ valid: false, message: 'Token inválido' });
   }
 });
 
