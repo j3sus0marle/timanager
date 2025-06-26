@@ -9,6 +9,7 @@ import CotizacionesElectricas from "./pages/CotizacionesElectricas";
 import OrdenesCompra from "./pages/OrdenesCompra";
 import Clientes from "./pages/Clientes";
 import Proveedores from "./pages/Proveedores";
+import RazonesSociales from "./pages/RazonesSociales";
 import Vendedores from "./pages/Vendedores";
 import Productos from "./pages/Mat-elec";
 import Inventario from "./pages/Inventario";
@@ -183,6 +184,7 @@ function App() {
           <Route path="cotizaciones-electricas" element={<CotizacionesElectricas />} />
           <Route path="clientes" element={<Clientes />} />
           <Route path="proveedores" element={<Proveedores />} />
+          <Route path="razones-sociales" element={<RazonesSociales />} />
           <Route path="vendedores" element={<Vendedores />} />
           <Route path="mat-elec" element={<Productos />} />
           <Route path="inventario" element={<Inventario />} />

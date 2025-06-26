@@ -89,3 +89,22 @@ export interface Proveedor {
   telefono: string;
   contactos: IContactoProveedor[];
 }
+
+export interface IDireccionEnvio {
+  nombre: string;
+  direccion: string;
+  telefono?: string;
+  contacto?: string;
+}
+
+export interface RazonSocial {
+  _id?: string;
+  nombre: string;
+  rfc: string;
+  emailEmpresa: string;
+  telEmpresa: string;
+  celEmpresa: string;
+  direccionEmpresa: string;
+  emailFacturacion: string;
+  direccionEnvio: IDireccionEnvio[];
+}
