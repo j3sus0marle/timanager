@@ -73,3 +73,19 @@ export interface Guia {
   estado: 'entregado' | 'no entregado' | 'en transito' | 'atrasado';
   comentarios?: string; // Nuevo campo
 }
+
+export interface IContactoProveedor {
+  nombre: string;
+  puesto: string;
+  correo: string;
+  telefono: string;
+  extension?: string;
+}
+
+export interface Proveedor {
+  _id?: string;
+  empresa: string;
+  direccion: string;
+  telefono: string;
+  contactos: IContactoProveedor[];
+}

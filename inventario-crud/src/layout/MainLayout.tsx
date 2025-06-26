@@ -15,7 +15,8 @@ import {
   FaUsers, 
   FaUserTie, 
   FaFileAlt, 
-  FaShoppingCart 
+  FaShoppingCart,
+  FaTruck
 } from "react-icons/fa";
 
 const MainLayout: React.FC<{ username?: string | null, onLogout?: () => void }> = ({ username, onLogout }) => {
@@ -79,6 +80,7 @@ const MainLayout: React.FC<{ username?: string | null, onLogout?: () => void }> 
       icon: <FaUsers size={16} />,
       items: [
         { path: "/clientes", label: "Clientes", icon: <FaUsers size={14} /> },
+        { path: "/proveedores", label: "Proveedores", icon: <FaTruck size={14} /> },
         { path: "/vendedores", label: "Vendedores", icon: <FaUserTie size={14} /> },
         { path: "/mat-elec", label: "Material Eléctrico", icon: <FaBolt size={14} /> },
       ],
@@ -137,7 +139,10 @@ const MainLayout: React.FC<{ username?: string | null, onLogout?: () => void }> 
                   <span>{group.items[0].label}</span>
                 </Link>
               ) : (
-                <>
+                <div
+                  onMouseEnter={() => setOpenDropdown(group.label)}
+                  onMouseLeave={() => setOpenDropdown(null)}
+                >
                   <button
                     className="group-toggle btn btn-link text-white w-100 text-start d-flex justify-content-between align-items-center"
                     style={{ textDecoration: 'none' }}
@@ -172,7 +177,7 @@ const MainLayout: React.FC<{ username?: string | null, onLogout?: () => void }> 
                       </li>
                     ))}
                   </ul>
-                </>
+                </div>
               )}
             </li>
           ))}
