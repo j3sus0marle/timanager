@@ -13,6 +13,7 @@ import clientesRoutes from "./routes/clientes";
 import proveedoresRoutes from "./routes/proveedores";
 import razonesSocialesRoutes from "./routes/razonesSociales";
 import guiasRoutes from "./routes/guias";
+import ordenesCompraRoutes from "./routes/ordenesCompra";
 import notificationConfigRoutes from "./routes/notificationConfigRoutes";
 import { revisarYNotificarGuias } from "./notificacionService";
 import "./cronNotificaciones";
@@ -38,6 +39,7 @@ app.use("/api/clientes", clientesRoutes);
 app.use("/api/proveedores", proveedoresRoutes);
 app.use("/api/razones-sociales", razonesSocialesRoutes);
 app.use("/api/guias", guiasRoutes);
+app.use("/api/ordenes-compra", ordenesCompraRoutes);
 app.use("/api/notification-config", notificationConfigRoutes);
 app.use('/api/auth', authRoutes);
 

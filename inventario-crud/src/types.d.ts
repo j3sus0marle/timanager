@@ -108,3 +108,14 @@ export interface RazonSocial {
   emailFacturacion: string;
   direccionEnvio: IDireccionEnvio[];
 }
+
+export interface OrdenCompra {
+  _id?: string;
+  numeroOrden: string;
+  fecha: Date | string;
+  proveedor: string | Proveedor;
+  razonSocial: string | RazonSocial;
+  datosOrden: any;
+  createdAt?: string;
+  updatedAt?: string;
+}

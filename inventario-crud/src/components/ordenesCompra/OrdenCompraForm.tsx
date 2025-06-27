@@ -1,0 +1,855 @@
+import React, { useState, useEffect, useCallback } from "react";
+import { 
+  Modal,
+  Form, 
+  Button, 
+  Row, 
+  Col,
+  Alert,
+  ListGroup,
+  Badge
+} from "react-bootstrap";
+import { Proveedor, RazonSocial } from "../../types";
+import axios from "axios";
+import ModalResultados from "./ModalResultados";
+
+interface OrdenCompraFormProps {
+  show: boolean;
+  onHide: () => void;
+  onSave: (data: any) => void;
+  editId?: string | null;
+}
+
+const OrdenCompraForm: React.FC<OrdenCompraFormProps> = ({ show, onHide, onSave, editId }) => {
+  // Estados del formulario
+  const [numeroOrden, setNumeroOrden] = useState("");
+  const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
+  
+  // Estados para proveedor
+  const [proveedorBusqueda, setProveedorBusqueda] = useState("");
+  const [proveedorSeleccionado, setProveedorSeleccionado] = useState<Proveedor | null>(null);
+  const [proveedoresSugerencias, setProveedoresSugerencias] = useState<Proveedor[]>([]);
+  const [mostrarSugerenciasProveedor, setMostrarSugerenciasProveedor] = useState(false);
+  
+  // Estados para razón social
+  const [razonSocialBusqueda, setRazonSocialBusqueda] = useState("");
+  const [razonSocialSeleccionada, setRazonSocialSeleccionada] = useState<RazonSocial | null>(null);
+  const [razonesSocialesSugerencias, setRazonesSocialesSugerencias] = useState<RazonSocial[]>([]);
+  const [mostrarSugerenciasRazonSocial, setMostrarSugerenciasRazonSocial] = useState(false);
+  
+  // Estado para archivo PDF
+  const [archivoPdf, setArchivoPdf] = useState<File | null>(null);
+  
+  // Estado para generación de número de orden
+  const [generandoNumero, setGenerandoNumero] = useState(false);
+  
+  // Estado para dirección de envío seleccionada
+  const [direccionEnvioSeleccionada, setDireccionEnvioSeleccionada] = useState<number | null>(null);
+  
+  // Estados para procesamiento y modal de resultados
+  const [mostrarModalResultados, setMostrarModalResultados] = useState(false);
+  const [procesando, setProcesando] = useState(false);
+  const [datosOrdenCompletos, setDatosOrdenCompletos] = useState<any>(null);
+  const [errorProcesamiento, setErrorProcesamiento] = useState<string | null>(null);
+  
+  // Estados para productos editables y totales
+  const [productosEditables, setProductosEditables] = useState<any[]>([]);
+  const [totalesCalculados, setTotalesCalculados] = useState({
+    subTotal: 0,
+    iva: 0,
+    total: 0
+  });
+  
+  const urlServer = import.meta.env.VITE_API_URL;
+
+  // Funciones helper para generar número de orden
+  const extraerLetrasProveedor = (nombreEmpresa: string): string => {
+    const letras = nombreEmpresa.replace(/[^A-Za-z]/g, '').toUpperCase();
+    return letras.substring(0, 3).padEnd(3, 'X');
+  };
+
+  const extraerLetrasRFC = (rfc: string): string => {
+    const letras = rfc.replace(/[^A-Za-z]/g, '').toUpperCase();
+    return letras.substring(0, 4).padEnd(4, 'X');
+  };
+
+  const obtenerSiguienteConsecutivo = async (prefijo: string): Promise<string> => {
+    try {
+      const response = await axios.get(`${urlServer}ordenes-compra/`);
+      const responseData = response.data as any;
+      const ordenes = (responseData?.data || responseData) as any[];
+      
+      const ordenesConPrefijo = ordenes.filter((orden: any) => 
+        orden.numeroOrden && orden.numeroOrden.startsWith(prefijo)
+      );
+
+      if (ordenesConPrefijo.length === 0) {
+        return 'A001';
+      }
+
+      const consecutivos = ordenesConPrefijo
+        .map((orden: any) => {
+          const match = orden.numeroOrden.match(/([A-Z])(\d{3})$/);
+          return match ? { letra: match[1], numero: parseInt(match[2]) } : null;
+        })
+        .filter((cons: any) => cons !== null)
+        .sort((a: any, b: any) => {
+          if (a.letra === b.letra) {
+            return b.numero - a.numero;
+          }
+          return b.letra.charCodeAt(0) - a.letra.charCodeAt(0);
+        });
+
+      if (consecutivos.length === 0) {
+        return 'A001';
+      }
+
+      const ultimo = consecutivos[0];
+      
+      if (!ultimo) {
+        return 'A001';
+      }
+      
+      if (ultimo.numero >= 999) {
+        const siguienteLetra = String.fromCharCode(ultimo.letra.charCodeAt(0) + 1);
+        return `${siguienteLetra}001`;
+      } else {
+        const siguienteNumero = ultimo.numero + 1;
+        return `${ultimo.letra}${siguienteNumero.toString().padStart(3, '0')}`;
+      }
+    } catch (error) {
+      console.error('Error al obtener consecutivo:', error);
+      return 'A001';
+    }
+  };
+
+  const generarNumeroOrden = async (proveedor: Proveedor, razonSocial: RazonSocial): Promise<string> => {
+    const letrasProveedor = extraerLetrasProveedor(proveedor.empresa);
+    const letrasRFC = extraerLetrasRFC(razonSocial.rfc);
+    const prefijo = `${letrasProveedor}-${letrasRFC}-`;
+    
+    const consecutivo = await obtenerSiguienteConsecutivo(prefijo);
+    return `${prefijo}${consecutivo}`;
+  };
+
+  // Cargar proveedores
+  const buscarProveedores = async (termino: string) => {
+    if (termino.length < 2) {
+      setProveedoresSugerencias([]);
+      return;
+    }
+    
+    try {
+      const response = await axios.get<Proveedor[]>(`${urlServer}proveedores/`);
+      const filtered = response.data.filter(proveedor =>
+        proveedor.empresa.toLowerCase().includes(termino.toLowerCase())
+      );
+      setProveedoresSugerencias(filtered.slice(0, 5));
+    } catch (error) {
+      console.error("Error al buscar proveedores:", error);
+      setProveedoresSugerencias([]);
+    }
+  };
+
+  // Cargar razones sociales
+  const buscarRazonesSociales = async (termino: string) => {
+    if (termino.length < 2) {
+      setRazonesSocialesSugerencias([]);
+      return;
+    }
+    
+    try {
+      const response = await axios.get<RazonSocial[]>(`${urlServer}razones-sociales/`);
+      const filtered = response.data.filter(razonSocial =>
+        razonSocial.nombre.toLowerCase().includes(termino.toLowerCase()) ||
+        razonSocial.rfc.toLowerCase().includes(termino.toLowerCase())
+      );
+      setRazonesSocialesSugerencias(filtered.slice(0, 5));
+    } catch (error) {
+      console.error("Error al buscar razones sociales:", error);
+      setRazonesSocialesSugerencias([]);
+    }
+  };
+
+  // Efectos para búsqueda
+  useEffect(() => {
+    if (proveedorBusqueda) {
+      buscarProveedores(proveedorBusqueda);
+    }
+  }, [proveedorBusqueda]);
+
+  useEffect(() => {
+    if (razonSocialBusqueda) {
+      buscarRazonesSociales(razonSocialBusqueda);
+    }
+  }, [razonSocialBusqueda]);
+
+  // Manejar cambio en búsqueda de proveedor
+  const handleProveedorBusquedaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const valor = e.target.value;
+    setProveedorBusqueda(valor);
+    setMostrarSugerenciasProveedor(true);
+    
+    if (!valor) {
+      setProveedorSeleccionado(null);
+      setProveedoresSugerencias([]);
+      if (numeroOrden) {
+        setNumeroOrden("");
+      }
+    }
+  };
+
+  // Manejar selección de proveedor
+  const handleProveedorSeleccion = async (proveedor: Proveedor) => {
+    setProveedorSeleccionado(proveedor);
+    setProveedorBusqueda(proveedor.empresa);
+    setMostrarSugerenciasProveedor(false);
+    setProveedoresSugerencias([]);
+    
+    if (razonSocialSeleccionada) {
+      try {
+        setGenerandoNumero(true);
+        const numeroGenerado = await generarNumeroOrden(proveedor, razonSocialSeleccionada);
+        setNumeroOrden(numeroGenerado);
+      } catch (error) {
+        console.error('Error al generar número de orden:', error);
+      } finally {
+        setGenerandoNumero(false);
+      }
+    }
+  };
+
+  // Manejar Enter en proveedor
+  const handleProveedorKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && proveedoresSugerencias.length > 0) {
+      e.preventDefault();
+      handleProveedorSeleccion(proveedoresSugerencias[0]);
+    }
+  };
+
+  // Manejar cambio en búsqueda de razón social
+  const handleRazonSocialBusquedaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const valor = e.target.value;
+    setRazonSocialBusqueda(valor);
+    setMostrarSugerenciasRazonSocial(true);
+    
+    if (!valor) {
+      setRazonSocialSeleccionada(null);
+      setRazonesSocialesSugerencias([]);
+      if (numeroOrden) {
+        setNumeroOrden("");
+      }
+      setDireccionEnvioSeleccionada(null);
+    }
+  };
+
+  // Manejar selección de razón social
+  const handleRazonSocialSeleccion = async (razonSocial: RazonSocial) => {
+    setRazonSocialSeleccionada(razonSocial);
+    setRazonSocialBusqueda(razonSocial.nombre);
+    setMostrarSugerenciasRazonSocial(false);
+    setRazonesSocialesSugerencias([]);
+    setDireccionEnvioSeleccionada(null);
+    
+    if (proveedorSeleccionado) {
+      try {
+        setGenerandoNumero(true);
+        const numeroGenerado = await generarNumeroOrden(proveedorSeleccionado, razonSocial);
+        setNumeroOrden(numeroGenerado);
+      } catch (error) {
+        console.error('Error al generar número de orden:', error);
+      } finally {
+        setGenerandoNumero(false);
+      }
+    }
+  };
+
+  // Manejar Enter en razón social
+  const handleRazonSocialKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && razonesSocialesSugerencias.length > 0) {
+      e.preventDefault();
+      handleRazonSocialSeleccion(razonesSocialesSugerencias[0]);
+    }
+  };
+
+  // Manejar cambio de archivo PDF
+  const handlePdfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type === 'application/pdf') {
+      setArchivoPdf(file);
+    } else {
+      alert('Por favor seleccione un archivo PDF válido');
+      e.target.value = '';
+    }
+  };
+
+  // Manejar selección de dirección de envío
+  const handleDireccionEnvioSeleccion = (index: number) => {
+    setDireccionEnvioSeleccionada(direccionEnvioSeleccionada === index ? null : index);
+  };
+
+  // Procesar orden completa
+  const procesarOrden = async () => {
+    // Validaciones básicas
+    if (!numeroOrden.trim()) {
+      alert('El número de orden es requerido');
+      return;
+    }
+    
+    if (!proveedorSeleccionado) {
+      alert('Debe seleccionar un proveedor');
+      return;
+    }
+    
+    if (!razonSocialSeleccionada) {
+      alert('Debe seleccionar una razón social');
+      return;
+    }
+
+    if (!archivoPdf) {
+      alert('Debe seleccionar un archivo PDF');
+      return;
+    }
+
+    setProcesando(true);
+    setErrorProcesamiento(null);
+
+    try {
+      // Preparar datos básicos de la orden
+      const datosBasicos = {
+        numeroOrden,
+        fecha,
+        proveedor: {
+          id: proveedorSeleccionado._id,
+          empresa: proveedorSeleccionado.empresa,
+          direccion: proveedorSeleccionado.direccion,
+          telefono: proveedorSeleccionado.telefono,
+          contactos: proveedorSeleccionado.contactos
+        },
+        razonSocial: {
+          id: razonSocialSeleccionada._id,
+          nombre: razonSocialSeleccionada.nombre,
+          rfc: razonSocialSeleccionada.rfc,
+          emailEmpresa: razonSocialSeleccionada.emailEmpresa,
+          telEmpresa: razonSocialSeleccionada.telEmpresa,
+          direccionEmpresa: razonSocialSeleccionada.direccionEmpresa,
+          emailFacturacion: razonSocialSeleccionada.emailFacturacion
+        },
+        direccionEnvio: direccionEnvioSeleccionada !== null ? {
+          indice: direccionEnvioSeleccionada,
+          ...razonSocialSeleccionada.direccionEnvio[direccionEnvioSeleccionada]
+        } : null
+      };
+
+      // Procesar PDF según el proveedor
+      const datosPdf = await procesarPdfSegunProveedor(archivoPdf, proveedorSeleccionado.empresa);
+
+      // Combinar todos los datos
+      const datosCompletos = {
+        ...datosBasicos,
+        pdfInfo: {
+          nombre: archivoPdf.name,
+          tamaño: archivoPdf.size,
+          tipo: archivoPdf.type
+        },
+        datosPdf: datosPdf,
+        fechaProcesamiento: new Date().toISOString()
+      };
+
+      setDatosOrdenCompletos(datosCompletos);
+      
+      // Inicializar productos editables
+      inicializarProductosEditables(datosPdf);
+      
+      setMostrarModalResultados(true);
+
+    } catch (error) {
+      console.error('Error al procesar orden:', error);
+      setErrorProcesamiento(error instanceof Error ? error.message : 'Error desconocido al procesar la orden');
+    } finally {
+      setProcesando(false);
+    }
+  };
+
+  // Procesar PDF según el proveedor
+  const procesarPdfSegunProveedor = async (pdf: File, empresaProveedor: string): Promise<any> => {
+    const formData = new FormData();
+    formData.append('pdf', pdf);
+    formData.append('proveedor', empresaProveedor);
+
+    try {
+      const response = await axios.post(`${urlServer}ordenes-compra/procesar-pdf`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      return response.data;
+    } catch (error) {
+      console.error('Error al procesar PDF:', error);
+      throw new Error('Error al procesar el archivo PDF. Verifique que el archivo sea válido.');
+    }
+  };
+
+  // Volver al formulario desde el modal de resultados
+  const volverAlFormulario = () => {
+    setMostrarModalResultados(false);
+    setDatosOrdenCompletos(null);
+    setErrorProcesamiento(null);
+  };
+
+  // Funciones para manejo de productos editables
+  const inicializarProductosEditables = (datosPdf: any) => {
+    // Los productos están en datosPdf.datosExtraidos.productos
+    if (datosPdf && datosPdf.datosExtraidos && datosPdf.datosExtraidos.productos) {
+      const productos = datosPdf.datosExtraidos.productos.map((producto: any) => ({
+        cantidad: Number(producto.cantidad) || 0,
+        clave: producto.codigo || '',
+        descripcion: producto.descripcion || '',
+        precioUnitario: Number(producto.precioUnitario) || 0,
+        unidad: producto.unidad || '',
+        almacen: producto.alm || '',
+        precioLista: Number(producto.precioLista) || 0
+      }));
+      
+      setProductosEditables(productos);
+      
+      // Usar totales del PDF si están disponibles, sino calcular automáticamente
+      if (datosPdf.datosExtraidos.totales) {
+        setTotalesCalculados({
+          subTotal: Number(datosPdf.datosExtraidos.totales.subTotal) || 0,
+          iva: Number(datosPdf.datosExtraidos.totales.iva) || 0,
+          total: Number(datosPdf.datosExtraidos.totales.total) || 0
+        });
+      } else {
+        // Calcular totales automáticamente si no están en el PDF
+        calcularTotales(productos);
+      }
+    } else {
+      // Si no hay productos, inicializar arrays vacíos
+      setProductosEditables([]);
+      setTotalesCalculados({ subTotal: 0, iva: 0, total: 0 });
+    }
+  };
+
+  const calcularTotales = useCallback((productos: any[]) => {
+    const subTotal = productos.reduce((sum, producto) => {
+      const importe = (producto.cantidad || 0) * (producto.precioUnitario || 0);
+      return sum + importe;
+    }, 0);
+    
+    // Detectar el porcentaje de IVA basado en los totales actuales
+    let porcentajeIva = 0.16; // 16% por defecto
+    if (totalesCalculados.subTotal > 0 && totalesCalculados.iva > 0) {
+      porcentajeIva = totalesCalculados.iva / totalesCalculados.subTotal;
+    }
+    
+    const iva = subTotal * porcentajeIva;
+    const total = subTotal + iva;
+    
+    const nuevosTotales = {
+      subTotal: Number(subTotal.toFixed(2)),
+      iva: Number(iva.toFixed(2)),
+      total: Number(total.toFixed(2))
+    };
+    
+    // Solo actualizar si los totales han cambiado significativamente
+    if (
+      Math.abs(nuevosTotales.subTotal - totalesCalculados.subTotal) > 0.01 ||
+      Math.abs(nuevosTotales.iva - totalesCalculados.iva) > 0.01 ||
+      Math.abs(nuevosTotales.total - totalesCalculados.total) > 0.01
+    ) {
+      setTotalesCalculados(nuevosTotales);
+    }
+  }, [totalesCalculados]);
+
+  // Función optimizada para actualizar productos con useCallback
+  const actualizarProducto = useCallback((index: number, campo: string, valor: any) => {
+    setProductosEditables(prev => {
+      const nuevosProductos = [...prev];
+      nuevosProductos[index] = {
+        ...nuevosProductos[index],
+        [campo]: valor
+      };
+      
+      // Calcular totales directamente con los nuevos productos
+      calcularTotales(nuevosProductos);
+      
+      return nuevosProductos;
+    });
+  }, [calcularTotales]);
+
+  // Función para agregar producto optimizada
+  const agregarNuevoProducto = useCallback(() => {
+    const nuevoProducto = {
+      clave: '',
+      descripcion: '',
+      cantidad: 0,
+      unidad: 'PIEZA',
+      precioUnitario: 0
+    };
+    setProductosEditables(prev => {
+      const nuevosProductos = [...prev, nuevoProducto];
+      calcularTotales(nuevosProductos);
+      return nuevosProductos;
+    });
+  }, [calcularTotales]);
+
+  return (
+    <>
+      {/* Modal principal del formulario */}
+      <Modal show={show && !mostrarModalResultados} onHide={onHide} size="xl" centered>
+        <Modal.Header closeButton className="bg-light border-bottom">
+          <Modal.Title>{editId ? "Editar Orden de Compra" : "Nueva Orden de Compra"}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="px-4 py-3" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+          <Form>
+            {/* Información básica */}
+            <Row className="mb-3">
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>
+                    Número de Orden *
+                    <small className="text-muted ms-2">
+                      (Auto-generado, editable)
+                    </small>
+                  </Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={numeroOrden}
+                    onChange={(e) => setNumeroOrden(e.target.value)}
+                    placeholder="Se generará automáticamente al seleccionar proveedor y razón social"
+                    required
+                  />
+                  <div className="d-flex justify-content-between align-items-center mt-2">
+                    {proveedorSeleccionado && razonSocialSeleccionada && (
+                      <>
+                        <Form.Text className="text-success">
+                          <i className="fas fa-info-circle me-1"></i>
+                          Formato: {extraerLetrasProveedor(proveedorSeleccionado.empresa)}-{extraerLetrasRFC(razonSocialSeleccionada.rfc)}-[Consecutivo]
+                        </Form.Text>
+                        <Button 
+                          variant="outline-primary" 
+                          size="sm"
+                          disabled={generandoNumero}
+                          onClick={async () => {
+                            try {
+                              setGenerandoNumero(true);
+                              const numeroGenerado = await generarNumeroOrden(proveedorSeleccionado, razonSocialSeleccionada);
+                              setNumeroOrden(numeroGenerado);
+                            } catch (error) {
+                              console.error('Error al regenerar número:', error);
+                              alert('Error al generar nuevo número de orden');
+                            } finally {
+                              setGenerandoNumero(false);
+                            }
+                          }}
+                        >
+                          {generandoNumero ? (
+                            <>
+                              <i className="fas fa-spinner fa-spin me-1"></i>
+                              Generando...
+                            </>
+                          ) : (
+                            <>
+                              <i className="fas fa-sync me-1"></i>
+                              Regenerar
+                            </>
+                          )}
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Fecha *</Form.Label>
+                  <Form.Control
+                    type="date"
+                    value={fecha}
+                    onChange={(e) => setFecha(e.target.value)}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            {/* Secciones de Proveedor y Razón Social lado a lado */}
+            <Row className="mb-4">
+              {/* Sección de Proveedor */}
+              <Col md={6}>
+                <div className="h-100 p-3" style={{ backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #dee2e6' }}>
+                  <h6 className="text-primary mb-3">Seleccionar Proveedor</h6>
+                  <Form.Group className="mb-3">
+                    <Form.Label>Buscar Proveedor *</Form.Label>
+                    <Form.Control
+                      type="text"
+                      value={proveedorBusqueda}
+                      onChange={handleProveedorBusquedaChange}
+                      onKeyDown={handleProveedorKeyDown}
+                      placeholder="Escriba el nombre del proveedor"
+                      required
+                    />
+                    {mostrarSugerenciasProveedor && proveedoresSugerencias.length > 0 && (
+                      <ListGroup className="mt-2" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                        {proveedoresSugerencias.map((proveedor) => (
+                          <ListGroup.Item
+                            key={proveedor._id}
+                            action
+                            onClick={() => handleProveedorSeleccion(proveedor)}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            <strong>{proveedor.empresa}</strong>
+                            <br />
+                            <small className="text-muted">
+                              {proveedor.direccion} - {proveedor.telefono}
+                            </small>
+                          </ListGroup.Item>
+                        ))}
+                      </ListGroup>
+                    )}
+                  </Form.Group>
+
+                  {proveedorSeleccionado && (
+                    <Alert variant="success" className="mb-0 small">
+                      <strong>Proveedor Seleccionado:</strong>
+                      <br />
+                      <strong>Empresa:</strong> {proveedorSeleccionado.empresa}
+                      <br />
+                      <strong>Dirección:</strong> {proveedorSeleccionado.direccion}
+                      <br />
+                      <strong>Teléfono:</strong> {proveedorSeleccionado.telefono}
+                      {proveedorSeleccionado.contactos.length > 0 && (
+                        <>
+                          <br />
+                          <strong>Contactos:</strong>
+                          <div className="mt-1">
+                            {proveedorSeleccionado.contactos.map((contacto, index) => (
+                              <Badge key={index} bg="info" className="me-1 mt-1 small">
+                                {contacto.nombre}
+                              </Badge>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </Alert>
+                  )}
+                </div>
+              </Col>
+
+              {/* Sección de Razón Social */}
+              <Col md={6}>
+                <div className="h-100 p-3" style={{ backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #dee2e6' }}>
+                  <h6 className="text-primary mb-3">Seleccionar Razón Social</h6>
+                  <Form.Group className="mb-3">
+                    <Form.Label>Buscar Razón Social *</Form.Label>
+                    <Form.Control
+                      type="text"
+                      value={razonSocialBusqueda}
+                      onChange={handleRazonSocialBusquedaChange}
+                      onKeyDown={handleRazonSocialKeyDown}
+                      placeholder="Escriba el nombre o RFC"
+                      required
+                    />
+                    {mostrarSugerenciasRazonSocial && razonesSocialesSugerencias.length > 0 && (
+                      <ListGroup className="mt-2" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                        {razonesSocialesSugerencias.map((razonSocial) => (
+                          <ListGroup.Item
+                            key={razonSocial._id}
+                            action
+                            onClick={() => handleRazonSocialSeleccion(razonSocial)}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            <strong>{razonSocial.nombre}</strong>
+                            <br />
+                            <small className="text-muted">
+                              RFC: {razonSocial.rfc} - {razonSocial.emailEmpresa}
+                            </small>
+                          </ListGroup.Item>
+                        ))}
+                      </ListGroup>
+                    )}
+                  </Form.Group>
+
+                  {razonSocialSeleccionada && (
+                    <Alert variant="success" className="mb-0 small">
+                      <strong>Razón Social Seleccionada:</strong>
+                      <br />
+                      <strong>Nombre:</strong> {razonSocialSeleccionada.nombre}
+                      <br />
+                      <strong>RFC:</strong> {razonSocialSeleccionada.rfc}
+                      <br />
+                      <strong>Email:</strong> {razonSocialSeleccionada.emailEmpresa}
+                      <br />
+                      <strong>Teléfono:</strong> {razonSocialSeleccionada.telEmpresa}
+                      <br />
+                      <strong>Dirección de Facturación:</strong> {razonSocialSeleccionada.direccionEmpresa}
+                      {direccionEnvioSeleccionada !== null && (
+                        <>
+                          <br />
+                          <strong>Dirección de Envío:</strong> {razonSocialSeleccionada.direccionEnvio[direccionEnvioSeleccionada].nombre}
+                          <Badge bg="info" className="ms-2 small">Seleccionada</Badge>
+                        </>
+                      )}
+                    </Alert>
+                  )}
+                </div>
+              </Col>
+            </Row>
+
+            {/* Sección de Direcciones de Envío */}
+            {razonSocialSeleccionada && razonSocialSeleccionada.direccionEnvio && razonSocialSeleccionada.direccionEnvio.length > 0 && (
+              <Row className="mb-4">
+                <Col>
+                  <div className="p-3" style={{ backgroundColor: '#f0f8ff', borderRadius: '8px', border: '1px solid #b3d9ff' }}>
+                    <h6 className="text-info mb-3">
+                      <i className="fas fa-map-marker-alt me-2"></i>
+                      Direcciones de Envío Disponibles
+                      {direccionEnvioSeleccionada !== null && (
+                        <Badge bg="success" className="ms-2">
+                          1 seleccionada
+                        </Badge>
+                      )}
+                    </h6>
+                    <Row>
+                      {razonSocialSeleccionada.direccionEnvio.map((direccion, index) => (
+                        <Col md={6} lg={4} key={index} className="mb-3">
+                          <div 
+                            className={`card h-100 ${direccionEnvioSeleccionada === index ? 'border-success' : ''}`}
+                            style={{ 
+                              border: `2px solid ${direccionEnvioSeleccionada === index ? '#28a745' : '#b3d9ff'}`,
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease'
+                            }}
+                            onClick={() => handleDireccionEnvioSeleccion(index)}
+                          >
+                            <div className="card-body p-3">
+                              <div className="d-flex justify-content-between align-items-start mb-2">
+                                <h6 className="card-title text-primary mb-0">
+                                  <i className="fas fa-building me-1"></i>
+                                  {direccion.nombre}
+                                </h6>
+                                <Form.Check
+                                  type="checkbox"
+                                  checked={direccionEnvioSeleccionada === index}
+                                  onChange={() => handleDireccionEnvioSeleccion(index)}
+                                  onClick={(e) => e.stopPropagation()}
+                                />
+                              </div>
+                              {direccionEnvioSeleccionada === index && (
+                                <div className="mb-2">
+                                  <Badge bg="success" className="small">
+                                    <i className="fas fa-check me-1"></i>
+                                    Dirección seleccionada
+                                  </Badge>
+                                </div>
+                              )}
+                              <div className="small">
+                                <div className="mb-2">
+                                  <i className="fas fa-map-pin me-1 text-muted"></i>
+                                  <strong>Dirección:</strong>
+                                  <br />
+                                  <span className="ms-3">{direccion.direccion}</span>
+                                </div>
+                                {direccion.telefono && (
+                                  <div className="mb-2">
+                                    <i className="fas fa-phone me-1 text-muted"></i>
+                                    <strong>Teléfono:</strong> {direccion.telefono}
+                                  </div>
+                                )}
+                                {direccion.contacto && (
+                                  <div className="mb-0">
+                                    <i className="fas fa-user me-1 text-muted"></i>
+                                    <strong>Contacto:</strong> {direccion.contacto}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </Col>
+                      ))}
+                    </Row>
+                    <div className="mt-2">
+                      <small className="text-muted">
+                        <i className="fas fa-info-circle me-1"></i>
+                        Haz clic en una tarjeta o checkbox para seleccionar la dirección de envío para esta orden.
+                        {direccionEnvioSeleccionada !== null && (
+                          <><br />
+                          <span className="text-success">
+                            <i className="fas fa-check-circle me-1"></i>
+                            Dirección "{razonSocialSeleccionada.direccionEnvio[direccionEnvioSeleccionada].nombre}" seleccionada.
+                          </span></>
+                        )}
+                      </small>
+                    </div>
+                  </div>
+                </Col>
+              </Row>
+            )}
+
+            {/* Sección de carga de PDF */}
+            <div className="mb-4 p-3" style={{ backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #dee2e6' }}>
+              <h6 className="text-primary mb-3">Cargar Archivo PDF</h6>
+              <Form.Group className="mb-3">
+                <Form.Label>Seleccionar archivo PDF</Form.Label>
+                <Form.Control
+                  type="file"
+                  accept=".pdf"
+                  onChange={handlePdfChange}
+                />
+                <Form.Text className="text-muted">
+                  Solo se permiten archivos PDF. Tamaño máximo: 10MB
+                </Form.Text>
+              </Form.Group>
+
+              {archivoPdf && (
+                <Alert variant="info" className="mb-0">
+                  <strong>Archivo seleccionado:</strong> {archivoPdf.name}
+                  <br />
+                  <strong>Tamaño:</strong> {(archivoPdf.size / 1024 / 1024).toFixed(2)} MB
+                </Alert>
+              )}
+            </div>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer className="bg-light border-top">
+          <Button variant="secondary" onClick={onHide}>
+            Cancelar
+          </Button>
+          <Button 
+            variant="primary" 
+            onClick={procesarOrden}
+            disabled={procesando}
+          >
+            {procesando ? (
+              <>
+                <i className="fas fa-spinner fa-spin me-2"></i>
+                Procesando...
+              </>
+            ) : (
+              <>
+                <i className="fas fa-cogs me-2"></i>
+                Procesar Orden
+              </>
+            )}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Modal de resultados */}
+      <ModalResultados
+        show={mostrarModalResultados}
+        errorProcesamiento={errorProcesamiento}
+        datosOrdenCompletos={datosOrdenCompletos}
+        productosEditables={productosEditables}
+        totalesCalculados={totalesCalculados}
+        onActualizarProducto={actualizarProducto}
+        onAgregarProducto={agregarNuevoProducto}
+        onVolverAlFormulario={volverAlFormulario}
+      />
+    </>
+  );
+};
+
+export default OrdenCompraForm;
