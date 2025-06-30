@@ -10,7 +10,11 @@ import {
   getOrdenesByProveedor,
   getOrdenesByRazonSocial,
   getOrdenesByDateRange,
-  procesarPdf
+  procesarPdf,
+  generarPdfOrdenCompra,
+  crearOrdenCompraConPdf,
+  getPdfOrdenCompra,
+  descargarPdfOrdenCompra
 } from '../controllers/ordenCompraController';
 
 const router = Router();
@@ -66,5 +70,13 @@ router.delete('/:id', asyncHandler(deleteOrdenCompra));
 
 // Ruta para procesar PDFs
 router.post('/procesar-pdf', upload.single('pdf'), asyncHandler(procesarPdf));
+
+// Nuevas rutas para generar PDF
+router.post('/generar-pdf', asyncHandler(generarPdfOrdenCompra));
+router.post('/crear-con-pdf', asyncHandler(crearOrdenCompraConPdf));
+
+// Rutas para obtener PDFs de órdenes específicas
+router.get('/:id/pdf', asyncHandler(getPdfOrdenCompra)); // Ver PDF en el navegador
+router.get('/:id/pdf/descargar', asyncHandler(descargarPdfOrdenCompra)); // Descargar PDF
 
 export default router;

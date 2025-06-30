@@ -117,6 +117,7 @@ export interface OrdenCompra {
   razonSocial: string | RazonSocial;
   vendedor?: string | Vendedor;
   datosOrden: any;
+  rutaPdf?: string; // Ruta del PDF generado
   createdAt?: string;
   updatedAt?: string;
 }

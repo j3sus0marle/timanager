@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Orden de Compra - {{noDocVal}}</title>
+  <link rel="stylesheet" href="ordenCompra.css">
+</head>
+<body>
+  <div id="tabla-cotizacion-wrapper" style="width:100%;overflow-x:auto;">
+    <img  src="img/top.png" alt="">
+    <!-- Tabla adicional de 10 columnas (A-J) y 14 filas, sin encabezado, transparente, con número de celda -->
+    <table id="tabla-top">
+      <tbody>
+        <tr>
+          <td class="columnaA"></td>
+          <td class="columnaB"></td>
+          <td class="columnaC"></td>
+          <td class="columnaD"></td>
+          <td class="columnaE"></td>
+          <td class="columnaF"></td>
+          <td class="columnaG"></td>
+          <td class="columnaH"></td>
+          <td class="columnaI"></td>
+          <td class="columnaJ"></td>
+        </tr>
+        <tr>
+          <td colspan="8"></td><td colspan="2" class="td-text-archivo" style="font-size: 15pt !important;">Orden de Compra</td>
+        </tr>
+        <tr>
+          <td colspan="6" class="td-info"></td><td></td><td></td><td class="td-info-text">No. Orden</td><td class="td-doc-info">{{noDocVal}}</td>
+        </tr>
+        <tr>
+          <td colspan="6" class="td-info-text"></td><td></td><td></td><td class="td-info-text">Fecha</td><td class="td-doc-info">{{fechaDoc}}</td>
+        </tr>
+        <tr>
+          <td colspan="6" class="td-info-text"></td><td></td><td></td><td class="td-info-text">Cotización</td><td class="td-doc-info">{{numCotizacion}}</td>
+        </tr>
+        <tr>
+          <td colspan="2" class="td-info">PROVEEDOR</td><td></td><td></td><td></td><td></td>
+        </tr>
+        <tr>
+          <td></td><td></td><td colspan="6" class="td-info-text">{{nomProveedor}}</td><td></td><td></td>
+        </tr>
+        <tr>
+          <td></td><td></td><td colspan="6" class="td-info-text">{{dirProveedor}}</td><td></td><td></td>
+        </tr>
+        <tr>
+          <td></td><td></td><td colspan="6" class="td-info-text">{{telProveedor}}</td><td></td><td></td>
+        </tr>
+        <tr>
+          <td colspan="2">CONTACTO</td><td colspan="6" class="td-info-text"></td><td></td><td></td><td></td>
+        </tr>
+        <tr>
+          <td></td><td></td><td colspan="6" class="td-info-text">{{contactoProveedor}}</td><td></td><td></td><td></td><td></td>
+        </tr>
+        <tr>
+          <td></td><td></td><td colspan="6" class="td-info-text">{{emailProveedorContacto}}</td><td></td><td></td><td></td><td></td>
+        </tr>
+        <tr>
+          <td></td><td></td><td colspan="6" class="td-info-text">{{telProveedorContato}}</td><td></td><td></td>
+        </tr>
+        <tr><td></td></tr>
+        <tr><td></td></tr>
+        
+        <tr>
+          <td colspan="2" class="td-info">FACTURAR A</td><td></td><td></td><td></td><td></td>
+        </tr>
+        <tr>
+          <td></td><td></td><td colspan="6" class="td-info-text">{{nomFacturar}}</td><td></td><td></td>
+        </tr>
+        <tr>
+          <td></td><td></td><td colspan="6" class="td-info-text">{{dirFacturar}}</td><td></td><td></td>
+        </tr>
+        <tr>
+          <td></td><td></td><td colspan="6" class="td-info-text">{{telFacturar}}</td><td></td><td></td>
+        </tr>
+        <tr>
+          <td colspan="2">SOLICITA</td><td colspan="6" class="td-info-text"></td><td></td><td></td><td></td>
+        </tr>
+        <tr>
+          <td></td><td></td><td colspan="6" class="td-info-text">{{solicitante}}</td><td></td><td></td><td></td><td></td>
+        </tr>        
+        <tr>
+          <td></td><td></td><td colspan="6" class="td-info-text">{{emailSolicitante}}</td><td></td><td></td><td></td><td></td>
+        </tr>
+        <tr>
+          <td></td><td></td><td colspan="6" class="td-info-text">{{telSolicitante}}</td><td></td><td></td>
+        </tr>
+        <tr>
+          <td colspan="2">ENTREGAR A</td><td colspan="6" class="td-info-text"></td><td></td><td></td><td></td>
+        </tr>
+        <tr>
+          <td></td><td></td><td colspan="6" class="td-info-text">{{receptor}}</td><td></td><td></td><td></td><td></td>
+        </tr>        
+        <tr>
+          <td></td><td></td><td colspan="6" class="td-info-text">{{direccionReceptor}}</td><td></td><td></td><td></td><td></td>
+        </tr>
+        <tr>
+          <td></td><td></td><td colspan="6" class="td-info-text">{{telefonoReceptor}}</td><td></td><td></td>
+        </tr>
+        <tr><td></td></tr>
+        <tr><td></td></tr>
+      </tbody>
+    </table>
+    
+    <table id="tabla-cotizacion">
+      <thead>
+        <tr>
+          <th class="col-codigo">CÓDIGO/CLAVE</th>
+          <th class="col-descripcion" colspan="3">DESCRIPCIÓN/CONCEPTO</th>
+          <th class="col-u">U</th>
+          <th class="col-cant">CANT</th>
+          <th class="col-pu">P.U.</th>
+          <th class="col-alm">ALM</th>
+          <th class="col-lista">P. LISTA</th>
+          <th class="col-importe">IMPORTE</th>
+        </tr>
+      </thead>
+      <tbody id="cuerpo-tabla">
+        {{productos}}
+      </tbody>
+    </table>
+    
+    <table id="tabla-cotizacion">
+        <tbody>
+        <tr style="height:5px;"><td colspan="10" style="border:none; background:none; padding:0; height:10px;"></td></tr>
+        <tr>
+          <td colspan="9" style="border:none; background:none; text-align:right; font-weight:bold;">SUBTOTAL</td>
+          <td class="col-importe subtotal-campo">{{subtotal}}</td>
+        </tr>
+        <tr>
+          <td colspan="9" style="border:none; background:none; text-align:right; font-weight:bold;">IVA</td>
+          <td class="col-importe iva-campo" style="background:#fff; color:#0F2A52;">{{iva}}</td>
+        </tr>
+        <tr>
+          <td colspan="9" style="border:none; background:none; text-align:right; font-weight:bold;">IMPORTE DE IVA</td>
+          <td class="col-importe impuesto-iva-campo">{{importeIva}}</td>
+        </tr>
+        <tr>
+          <td colspan="9" style="border:none; background:none; text-align:right; font-weight:bold;">TOTAL</td>
+          <td class="col-importe total-campo">{{total}}</td>
+        </tr>
+        </tbody>
+    </table>
+
+    <div class="div-final-pagina">
+        <table id="tabla-bottom">
+          <tbody>
+            <tr>
+              <td class="col-obs" colspan="3">Uso de Mercancia</td><td colspan="2">{{usoMercancia}}</td>
+            </tr>
+            <tr>
+              <td class="col-obs" colspan="3">Forma de pago</td><td colspan="2">{{formaPago}}</td>
+            </tr>
+            <tr>
+              <td class="col-obs" colspan="3">Moneda</td><td colspan="2">{{moneda}}</td>
+            </tr>
+            <tr><td></td></tr>
+            <tr><td></td></tr>
+            <tr><td></td></tr>
+            <tr><td></td></tr>
+            <tr><td></td></tr>
+            <tr><td></td></tr>
+            <tr><td></td></tr>
+            <tr><td></td></tr>
+            <tr><td></td></tr>
+            <tr><td></td></tr>
+            <tr><td></td></tr>
+            <tr><td></td></tr>
+            <tr><td></td></tr>
+            <tr><td></td></tr>
+            <tr><td></td></tr>
+            <tr><td></td></tr>
+            <tr>        
+              <td class="col-obs" colspan="10">_____________________</td>
+            </tr>
+            <tr>        
+              <td class="col-obs" colspan="10">AUTORIZA</td>
+            </tr>
+            <tr>
+              <td class="col-obs-text" colspan="10"></td>
+            </tr>
+            <tr>
+              <td class="col-obs-text" colspan="10"></td>
+            </tr>
+            <tr>
+              <td colspan="5" >_____________________</td>
+              <td colspan="5" >_____________________</td>
+            </tr>
+            <tr>
+              <td class="col-firma" colspan="5">FIRMA DEL PROVEEDOR</td>
+              <td class="col-firma" colspan="5">FIRMA DEL SOLICITANTE</td>
+            </tr>
+          </tbody>
+        </table>
+        <img src="img/bottom-2.png" alt=""  class="img-bottom">
+    </div>
+  </div>
+</body>
+</html>

@@ -7,6 +7,7 @@ export interface IOrdenCompra extends Document {
   razonSocial: mongoose.Types.ObjectId;
   vendedor?: mongoose.Types.ObjectId;
   datosOrden: any; // JSON flexible que puede variar en estructura
+  rutaPdf?: string; // Ruta donde se guardó el PDF generado
 }
 
 const OrdenCompraSchema: Schema = new Schema({
@@ -39,6 +40,10 @@ const OrdenCompraSchema: Schema = new Schema({
   datosOrden: { 
     type: Schema.Types.Mixed, 
     
+  },
+  rutaPdf: {
+    type: String,
+    required: false // Opcional, ya que puede no haberse generado PDF
   }
 }, {
   timestamps: true

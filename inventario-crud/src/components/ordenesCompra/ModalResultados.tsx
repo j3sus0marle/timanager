@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Modal, Form, Button, Row, Col, Alert, Badge } from "react-bootstrap";
+import { Modal, Form, Button, Row, Col, Alert, Badge, Spinner } from "react-bootstrap";
 
 interface ModalResultadosProps {
   show: boolean;
@@ -14,6 +14,7 @@ interface ModalResultadosProps {
   onActualizarProducto: (index: number, campo: string, valor: any) => void;
   onAgregarProducto: () => void;
   onVolverAlFormulario: () => void;
+  onGenerarOrden?: (datosOrden: any) => Promise<void>;
 }
 
 // Tipos de moneda disponibles
@@ -198,10 +199,41 @@ const ModalResultados: React.FC<ModalResultadosProps> = React.memo(({
   totalesCalculados,
   onActualizarProducto,
   onAgregarProducto,
-  onVolverAlFormulario
+  onVolverAlFormulario,
+  onGenerarOrden
 }) => {
   // Estado para la moneda seleccionada
   const [monedaSeleccionada, setMonedaSeleccionada] = useState<string>('MXN');
+  // Estado para controlar el loading del botón de generar orden
+  const [generandoOrden, setGenerandoOrden] = useState<boolean>(false);
+
+  const handleGenerarOrden = async () => {
+    if (!onGenerarOrden || productosEditables.length === 0) return;
+    
+    try {
+      setGenerandoOrden(true);
+      
+      // Preparar los datos de la orden para enviar al backend
+      const datosParaEnviar = {
+        numeroOrden: datosOrdenCompletos?.numeroOrden || '',
+        fecha: datosOrdenCompletos?.fecha || new Date().toISOString(),
+        proveedor: datosOrdenCompletos?.proveedor?.id || datosOrdenCompletos?.proveedor?._id,
+        razonSocial: datosOrdenCompletos?.razonSocial?.id || datosOrdenCompletos?.razonSocial?._id,
+        vendedor: datosOrdenCompletos?.vendedor?.id || datosOrdenCompletos?.vendedor?._id,
+        direccionEnvio: datosOrdenCompletos?.direccionEnvio,
+        productos: productosEditables,
+        totalesCalculados: totalesCalculados,
+        datosPdf: datosOrdenCompletos?.datosPdf || datosOrdenCompletos?.pdfInfo,
+        moneda: monedaSeleccionada
+      };
+      
+      await onGenerarOrden(datosParaEnviar);
+    } catch (error) {
+      console.error('Error al generar orden:', error);
+    } finally {
+      setGenerandoOrden(false);
+    }
+  };
   return (
     <Modal show={show} onHide={() => {}} size="xl" centered>
       <Modal.Header className="bg-success text-white">
@@ -368,9 +400,22 @@ const ModalResultados: React.FC<ModalResultadosProps> = React.memo(({
           <i className="fas fa-arrow-left me-2"></i>
           Volver al Formulario
         </Button>
-        <Button variant="success" disabled={productosEditables.length === 0}>
-          <i className="fas fa-save me-2"></i>
-          Guardar Orden
+        <Button 
+          variant="success" 
+          disabled={productosEditables.length === 0 || generandoOrden}
+          onClick={handleGenerarOrden}
+        >
+          {generandoOrden ? (
+            <>
+              <Spinner animation="border" size="sm" className="me-2" />
+              Generando...
+            </>
+          ) : (
+            <>
+              <i className="fas fa-file-pdf me-2"></i>
+              Generar Orden
+            </>
+          )}
         </Button>
       </Modal.Footer>
     </Modal>

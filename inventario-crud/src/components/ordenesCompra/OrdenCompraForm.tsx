@@ -18,9 +18,10 @@ interface OrdenCompraFormProps {
   onHide: () => void;
   onSave: (data: any) => void;
   editId?: string | null;
+  onOrdenCreada?: () => void; // Nueva prop para notificar cuando se crea una orden
 }
 
-const OrdenCompraForm: React.FC<OrdenCompraFormProps> = ({ show, onHide, onSave, editId }) => {
+const OrdenCompraForm: React.FC<OrdenCompraFormProps> = ({ show, onHide, onSave, editId, onOrdenCreada }) => {
   // Estados del formulario
   const [numeroOrden, setNumeroOrden] = useState("");
   const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
@@ -561,6 +562,74 @@ const OrdenCompraForm: React.FC<OrdenCompraFormProps> = ({ show, onHide, onSave,
     });
   }, [calcularTotales]);
 
+  // Función para generar la orden de compra con PDF
+  const generarOrdenCompra = async (datosOrden: any) => {
+    try {
+      const response = await axios.post(`${urlServer}ordenes-compra/crear-con-pdf`, datosOrden, {
+        responseType: 'blob', // Para recibir el PDF como blob
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      // Crear URL para descargar el PDF
+      const blob = new Blob([response.data as BlobPart], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      
+      // Crear enlace de descarga
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `OrdenCompra-${datosOrden.numeroOrden || 'nueva'}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Limpiar URL
+      window.URL.revokeObjectURL(url);
+      
+      // Obtener información de la orden creada desde el header (si existe)
+      const ordenId = response.headers['x-orden-id'];
+      if (ordenId) {
+        console.log('Orden creada con ID:', ordenId);
+      }
+      
+      // Mostrar mensaje de éxito
+      alert('Orden de compra generada exitosamente. El PDF se ha descargado automáticamente.');
+      
+      // Notificar al componente padre que se creó una nueva orden
+      if (onOrdenCreada) {
+        onOrdenCreada();
+      }
+      
+      // Cerrar modales y resetear formulario
+      setMostrarModalResultados(false);
+      onHide();
+      resetFormulario();
+      
+    } catch (error) {
+      console.error('Error al generar orden de compra:', error);
+
+    }
+  };
+
+  // Función para resetear el formulario
+  const resetFormulario = () => {
+    setNumeroOrden("");
+    setFecha(new Date().toISOString().split('T')[0]);
+    setProveedorBusqueda("");
+    setProveedorSeleccionado(null);
+    setRazonSocialBusqueda("");
+    setRazonSocialSeleccionada(null);
+    setVendedorBusqueda("");
+    setVendedorSeleccionado(null);
+    setArchivoPdf(null);
+    setDireccionEnvioSeleccionada(null);
+    setDatosOrdenCompletos(null);
+    setErrorProcesamiento(null);
+    setProductosEditables([]);
+    setTotalesCalculados({ subTotal: 0, iva: 0, total: 0 });
+  };
+
   return (
     <>
       {/* Modal principal del formulario */}
@@ -963,6 +1032,7 @@ const OrdenCompraForm: React.FC<OrdenCompraFormProps> = ({ show, onHide, onSave,
         onActualizarProducto={actualizarProducto}
         onAgregarProducto={agregarNuevoProducto}
         onVolverAlFormulario={volverAlFormulario}
+        onGenerarOrden={generarOrdenCompra}
       />
     </>
   );

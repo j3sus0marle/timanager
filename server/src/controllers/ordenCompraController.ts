@@ -7,8 +7,10 @@ import OrdenCompra from '../models/OrdenCompra';
 import Proveedor from '../models/Proveedor';
 import RazonSocial from '../models/RazonSocial';
 import Vendedor from '../models/Vendedor';
+import { PdfGeneratorService } from '../services/pdfGenerator';
 
 const execFileAsync = promisify(execFile);
+const pdfGenerator = new PdfGeneratorService();
 
 export const getOrdenesCompra = async (req: Request, res: Response) => {
   try {
@@ -334,3 +336,256 @@ function getScriptPath(proveedor: string): string | null {
   console.warn(`No se encontró script para el proveedor: ${proveedor}`);
   return null;
 }
+
+/**
+ * Generar PDF de orden de compra
+ */
+export const generarPdfOrdenCompra = async (req: Request, res: Response) => {
+  try {
+    const datosOrden = req.body;
+    
+    // Validar que se proporcionen los datos mínimos necesarios
+    if (!datosOrden || !datosOrden.numeroOrden) {
+      return res.status(400).json({ error: 'Faltan datos requeridos para generar la orden de compra' });
+    }
+
+    // Generar número de orden si no existe
+    if (!datosOrden.numeroOrden) {
+      const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+      datosOrden.numeroOrden = `OC-${timestamp}-${random}`;
+    }
+
+    // Generar el PDF
+    const pdfBuffer = await pdfGenerator.generarPdfOrdenCompra(datosOrden);
+    
+    // Configurar headers para la respuesta PDF
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="OrdenCompra-${datosOrden.numeroOrden}.pdf"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+    
+    // Enviar el PDF
+    res.send(pdfBuffer);
+    
+  } catch (error) {
+    console.error('Error al generar PDF de orden de compra:', error);
+    res.status(500).json({ 
+      error: 'Error al generar PDF de orden de compra',
+      detalles: error instanceof Error ? error.message : 'Error desconocido'
+    });
+  }
+};
+
+/**
+ * Crear orden de compra y generar PDF
+ */
+export const crearOrdenCompraConPdf = async (req: Request, res: Response) => {
+  try {
+    const { 
+      numeroOrden, 
+      fecha, 
+      proveedor, 
+      razonSocial, 
+      vendedor, 
+      direccionEnvio,
+      productos,
+      totalesCalculados,
+      datosPdf 
+    } = req.body;
+    
+    // Validar que el proveedor existe
+    const proveedorData = await Proveedor.findById(proveedor);
+    if (!proveedorData) {
+      return res.status(400).json({ error: 'El proveedor especificado no existe' });
+    }
+    
+    // Validar que la razón social existe
+    const razonSocialData = await RazonSocial.findById(razonSocial);
+    if (!razonSocialData) {
+      return res.status(400).json({ error: 'La razón social especificada no existe' });
+    }
+
+    // Validar vendedor si se proporciona
+    let vendedorData = null;
+    if (vendedor) {
+      vendedorData = await Vendedor.findById(vendedor);
+      if (!vendedorData) {
+        return res.status(400).json({ error: 'El vendedor especificado no existe' });
+      }
+    }
+
+    // Generar número de orden si no se proporciona
+    let numeroOrdenFinal = numeroOrden;
+    if (!numeroOrdenFinal) {
+      const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+      numeroOrdenFinal = `OC-${timestamp}-${random}`;
+    }
+    
+    // Crear la orden de compra en la base de datos
+    const ordenCompra = new OrdenCompra({
+      numeroOrden: numeroOrdenFinal,
+      fecha: fecha ? new Date(fecha) : new Date(),
+      proveedor,
+      razonSocial,
+      vendedor: vendedor || undefined,
+      datosOrden: {
+        direccionEnvio,
+        productos,
+        totalesCalculados,
+        datosPdf
+      }
+    });
+    
+    await ordenCompra.save();
+    
+    // Preparar datos para generar PDF
+    const datosParaPdf = {
+      numeroOrden: numeroOrdenFinal,
+      fecha: fecha ? new Date(fecha).toLocaleDateString('es-MX') : new Date().toLocaleDateString('es-MX'),
+      proveedor: proveedorData.toObject(),
+      razonSocial: razonSocialData.toObject(),
+      vendedor: vendedorData ? vendedorData.toObject() : undefined,
+      direccionEnvio,
+      productos,
+      totalesCalculados,
+      datosPdf
+    };
+    
+    // Generar el PDF
+    const pdfBuffer = await pdfGenerator.generarPdfOrdenCompra(datosParaPdf);
+    
+    // Crear directorio para PDFs si no existe
+    const pdfDir = path.join(__dirname, '..', '..', 'pdfs');
+    if (!fs.existsSync(pdfDir)) {
+      fs.mkdirSync(pdfDir, { recursive: true });
+    }
+    
+    // Guardar el PDF en el servidor
+    const nombreArchivoPdf = `OrdenCompra-${numeroOrdenFinal}-${Date.now()}.pdf`;
+    const rutaPdf = path.join(pdfDir, nombreArchivoPdf);
+    fs.writeFileSync(rutaPdf, pdfBuffer);
+    
+    // Actualizar la orden con la ruta del PDF
+    ordenCompra.rutaPdf = `pdfs/${nombreArchivoPdf}`;
+    await ordenCompra.save();
+    
+    // Devolver la orden creada y el PDF
+    const ordenCreada = await OrdenCompra.findById(ordenCompra._id)
+      .populate('proveedor', 'empresa')
+      .populate('razonSocial', 'nombre rfc')
+      .populate('vendedor', 'nombre correo telefono');
+    
+    // Configurar headers para la respuesta PDF
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="OrdenCompra-${numeroOrdenFinal}.pdf"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+    res.setHeader('X-Orden-Id', ordenCreada?._id?.toString() || '');
+    
+    // Enviar el PDF
+    res.send(pdfBuffer);
+    
+  } catch (err: any) {
+    console.error('Error al crear orden de compra con PDF:', err);
+    if (err.code === 11000) {
+      res.status(400).json({ error: 'El número de orden ya existe' });
+    } else {
+      res.status(400).json({ 
+        error: 'Error al crear orden de compra con PDF',
+        detalles: err.message
+      });
+    }
+  }
+};
+
+/**
+ * Obtener PDF de una orden de compra específica
+ */
+export const getPdfOrdenCompra = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    // Buscar la orden de compra
+    const ordenCompra = await OrdenCompra.findById(id);
+    if (!ordenCompra) {
+      return res.status(404).json({ error: 'Orden de compra no encontrada' });
+    }
+    
+    // Verificar si tiene PDF asociado
+    if (!ordenCompra.rutaPdf) {
+      return res.status(404).json({ error: 'No se ha generado PDF para esta orden' });
+    }
+    
+    // Construir la ruta completa del archivo
+    const rutaCompleta = path.join(__dirname, '..', '..', ordenCompra.rutaPdf);
+    
+    // Verificar que el archivo existe
+    if (!fs.existsSync(rutaCompleta)) {
+      return res.status(404).json({ error: 'Archivo PDF no encontrado en el servidor' });
+    }
+    
+    // Leer el archivo PDF
+    const pdfBuffer = fs.readFileSync(rutaCompleta);
+    
+    // Configurar headers para mostrar el PDF en el navegador
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="OrdenCompra-${ordenCompra.numeroOrden}.pdf"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+    
+    // Enviar el PDF
+    res.send(pdfBuffer);
+    
+  } catch (err: any) {
+    console.error('Error al obtener PDF de orden de compra:', err);
+    res.status(500).json({ 
+      error: 'Error al obtener PDF de orden de compra',
+      detalles: err.message
+    });
+  }
+};
+
+/**
+ * Descargar PDF de una orden de compra específica
+ */
+export const descargarPdfOrdenCompra = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    // Buscar la orden de compra
+    const ordenCompra = await OrdenCompra.findById(id);
+    if (!ordenCompra) {
+      return res.status(404).json({ error: 'Orden de compra no encontrada' });
+    }
+    
+    // Verificar si tiene PDF asociado
+    if (!ordenCompra.rutaPdf) {
+      return res.status(404).json({ error: 'No se ha generado PDF para esta orden' });
+    }
+    
+    // Construir la ruta completa del archivo
+    const rutaCompleta = path.join(__dirname, '..', '..', ordenCompra.rutaPdf);
+    
+    // Verificar que el archivo existe
+    if (!fs.existsSync(rutaCompleta)) {
+      return res.status(404).json({ error: 'Archivo PDF no encontrado en el servidor' });
+    }
+    
+    // Leer el archivo PDF
+    const pdfBuffer = fs.readFileSync(rutaCompleta);
+    
+    // Configurar headers para forzar descarga
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="OrdenCompra-${ordenCompra.numeroOrden}.pdf"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+    
+    // Enviar el PDF
+    res.send(pdfBuffer);
+    
+  } catch (err: any) {
+    console.error('Error al descargar PDF de orden de compra:', err);
+    res.status(500).json({ 
+      error: 'Error al descargar PDF de orden de compra',
+      detalles: err.message
+    });
+  }
+};
