@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Modal, Form, Button, Row, Col, Alert, Badge } from "react-bootstrap";
 
 interface ModalResultadosProps {
@@ -16,19 +16,35 @@ interface ModalResultadosProps {
   onVolverAlFormulario: () => void;
 }
 
+// Tipos de moneda disponibles
+const MONEDAS = {
+  MXN: { codigo: 'MXN', nombre: 'Pesos Mexicanos', simbolo: '$', locale: 'es-MX' },
+  USD: { codigo: 'USD', nombre: 'Dólares Estadounidenses', simbolo: '$', locale: 'en-US' }
+};
+
 // Componente optimizado para fila de producto individual
 const FilaProducto = React.memo(({ 
   producto, 
   index, 
-  onActualizar 
+  onActualizar,
+  moneda
 }: { 
   producto: any, 
   index: number, 
-  onActualizar: (index: number, campo: string, valor: any) => void 
+  onActualizar: (index: number, campo: string, valor: any) => void,
+  moneda: string
 }) => {
   const importe = useMemo(() => {
     return (Number(producto.cantidad) || 0) * (Number(producto.precioUnitario) || 0);
   }, [producto.cantidad, producto.precioUnitario]);
+
+  const formatearMoneda = (valor: number) => {
+    const monedaInfo = MONEDAS[moneda as keyof typeof MONEDAS];
+    return `${monedaInfo.simbolo}${valor.toLocaleString(monedaInfo.locale, { 
+      minimumFractionDigits: 2, 
+      maximumFractionDigits: 2 
+    })} ${monedaInfo.codigo}`;
+  };
   
   return (
     <tr>
@@ -87,10 +103,7 @@ const FilaProducto = React.memo(({
       </td>
       <td className="align-middle">
         <div className="fw-bold text-end">
-          ${importe.toLocaleString('es-MX', { 
-            minimumFractionDigits: 2, 
-            maximumFractionDigits: 2 
-          })}
+          {formatearMoneda(importe)}
         </div>
       </td>
     </tr>
@@ -100,13 +113,27 @@ const FilaProducto = React.memo(({
 FilaProducto.displayName = 'FilaProducto';
 
 // Componente optimizado para los totales
-const ComponenteTotales = React.memo(({ totales }: { totales: any }) => {
+const ComponenteTotales = React.memo(({ 
+  totales, 
+  moneda 
+}: { 
+  totales: any, 
+  moneda: string 
+}) => {
   const porcentajeIva = useMemo(() => {
     if (totales.subTotal > 0 && totales.iva > 0) {
       return ((totales.iva / totales.subTotal) * 100).toFixed(1);
     }
     return '16.0';
   }, [totales.subTotal, totales.iva]);
+
+  const formatearMoneda = (valor: number) => {
+    const monedaInfo = MONEDAS[moneda as keyof typeof MONEDAS];
+    return `${monedaInfo.simbolo}${valor.toLocaleString(monedaInfo.locale, { 
+      minimumFractionDigits: 2, 
+      maximumFractionDigits: 2 
+    })} ${monedaInfo.codigo}`;
+  };
 
   return (
     <div className="card">
@@ -123,10 +150,7 @@ const ComponenteTotales = React.memo(({ totales }: { totales: any }) => {
             <Form.Control
               type="text"
               size="sm"
-              value={`$${totales.subTotal.toLocaleString('es-MX', { 
-                minimumFractionDigits: 2, 
-                maximumFractionDigits: 2 
-              })}`}
+              value={formatearMoneda(totales.subTotal)}
               readOnly
               className="text-end fw-bold border-0 bg-light"
             />
@@ -140,10 +164,7 @@ const ComponenteTotales = React.memo(({ totales }: { totales: any }) => {
             <Form.Control
               type="text"
               size="sm"
-              value={`$${totales.iva.toLocaleString('es-MX', { 
-                minimumFractionDigits: 2, 
-                maximumFractionDigits: 2 
-              })}`}
+              value={formatearMoneda(totales.iva)}
               readOnly
               className="text-end fw-bold border-0 bg-light"
             />
@@ -156,10 +177,7 @@ const ComponenteTotales = React.memo(({ totales }: { totales: any }) => {
             <Form.Control
               type="text"
               size="sm"
-              value={`$${totales.total.toLocaleString('es-MX', { 
-                minimumFractionDigits: 2, 
-                maximumFractionDigits: 2 
-              })}`}
+              value={formatearMoneda(totales.total)}
               readOnly
               className="text-end fw-bold border-2 border-primary bg-light text-primary"
             />
@@ -182,6 +200,8 @@ const ModalResultados: React.FC<ModalResultadosProps> = React.memo(({
   onAgregarProducto,
   onVolverAlFormulario
 }) => {
+  // Estado para la moneda seleccionada
+  const [monedaSeleccionada, setMonedaSeleccionada] = useState<string>('MXN');
   return (
     <Modal show={show} onHide={() => {}} size="xl" centered>
       <Modal.Header className="bg-success text-white">
@@ -225,6 +245,36 @@ const ModalResultados: React.FC<ModalResultadosProps> = React.memo(({
               </Row>
             )}
 
+            {/* Selector de moneda */}
+            <div className="mb-4 p-3" style={{ backgroundColor: '#f0f8ff', borderRadius: '8px', border: '1px solid #b3d9ff' }}>
+              <Row className="align-items-center">
+                <Col md={6}>
+                  <h6 className="text-info mb-0">
+                    <i className="fas fa-money-bill-wave me-2"></i>
+                    Configuración de Moneda
+                  </h6>
+                </Col>
+                <Col md={6}>
+                  <Form.Group className="mb-0">
+                    <Form.Label className="small fw-bold mb-1">Tipo de Moneda:</Form.Label>
+                    <Form.Select
+                      size="sm"
+                      value={monedaSeleccionada}
+                      onChange={(e) => setMonedaSeleccionada(e.target.value)}
+                      className="border-info"
+                    >
+                      <option value="MXN">
+                        {MONEDAS.MXN.simbolo} {MONEDAS.MXN.nombre} ({MONEDAS.MXN.codigo})
+                      </option>
+                      <option value="USD">
+                        {MONEDAS.USD.simbolo} {MONEDAS.USD.nombre} ({MONEDAS.USD.codigo})
+                      </option>
+                    </Form.Select>
+                  </Form.Group>
+                </Col>
+              </Row>
+            </div>
+
             {/* Tabla de productos editables */}
             {productosEditables.length > 0 && (
               <div className="mb-4">
@@ -253,6 +303,7 @@ const ModalResultados: React.FC<ModalResultadosProps> = React.memo(({
                           producto={producto}
                           index={index}
                           onActualizar={onActualizarProducto}
+                          moneda={monedaSeleccionada}
                         />
                       ))}
                     </tbody>
@@ -266,7 +317,10 @@ const ModalResultados: React.FC<ModalResultadosProps> = React.memo(({
               <Row>
                 <Col md={8}></Col>
                 <Col md={4}>
-                  <ComponenteTotales totales={totalesCalculados} />
+                  <ComponenteTotales 
+                    totales={totalesCalculados} 
+                    moneda={monedaSeleccionada}
+                  />
                 </Col>
               </Row>
             </div>
