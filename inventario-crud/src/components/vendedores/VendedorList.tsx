@@ -1,176 +1,155 @@
-// ...moved from ../VendedorList.tsx...
-import { useEffect, useState } from "react";
 import axios from "axios";
-import { Button, Table, Modal, Form } from "react-bootstrap";
+import { useState, useEffect } from "react";
 import { Vendedor } from "../../types";
+import SearchBar from "../common/SearchBar";
+import DataTable, { DataTableColumn } from "../common/DataTable";
+import PaginationCompact from "../common/PaginationCompact";
+import { Button, Modal, Form, Row, Col } from "react-bootstrap";
+
+const emptyVendedor: Vendedor = { nombre: "", correo: "", telefono: "" };
 
 const VendedorList: React.FC = () => {
   const [vendedores, setVendedores] = useState<Vendedor[]>([]);
+  const [filteredVendedores, setFilteredVendedores] = useState<Vendedor[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [showModal, setShowModal] = useState(false);
-  const [newVendedor, setNewVendedor] = useState<Vendedor>({ nombre: "", correo: "", telefono: "" });
-  const [editVendedorId, setEditVendedorId] = useState<string | null>(null);
-  const [editedVendedor, setEditedVendedor] = useState<Vendedor | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [newVendedor, setNewVendedor] = useState<Vendedor>({ ...emptyVendedor });
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
-  const url = "http://192.168.100.25:6051/api/vendedores/";
+  const urlServer = import.meta.env.VITE_API_URL + "vendedores/";
 
   const fetchVendedores = async () => {
     try {
-        const res = await axios.get<Vendedor[]>(url);
-        setVendedores(res.data);
-    } catch (error) {
-      console.error("Error al obtener vendedores", error);
+      const res = await axios.get<Vendedor[]>(urlServer);
+      setVendedores(res.data);
+      setFilteredVendedores(res.data);
+    } catch (err) {
+      setVendedores([]);
+      setFilteredVendedores([]);
     }
   };
 
-  useEffect(() => {
-    fetchVendedores();
-  }, []);
+  useEffect(() => { fetchVendedores(); }, []);
 
-  const handleAddVendedor = async () => {
-    try {
-      await axios.post(url, newVendedor);
-      setNewVendedor({ nombre: "", correo: "", telefono: "" });
-      setShowModal(false);
-      fetchVendedores();
-    } catch (error) {
-      console.error("Error al agregar vendedor", error);
+  const handleSearch = (term: string) => {
+    setSearchTerm(term);
+    if (!term) setFilteredVendedores(vendedores);
+    else {
+      const lower = term.toLowerCase();
+      setFilteredVendedores(vendedores.filter(v =>
+        v.nombre.toLowerCase().includes(lower) ||
+        v.correo.toLowerCase().includes(lower) ||
+        v.telefono.toLowerCase().includes(lower)
+      ));
     }
+  };
+
+  const handleSave = async () => {
+    try {
+      if (editId) {
+        await axios.put(urlServer + editId, newVendedor);
+      } else {
+        await axios.post(urlServer, newVendedor);
+      }
+      setShowModal(false);
+      setNewVendedor({ ...emptyVendedor });
+      setEditId(null);
+      fetchVendedores();
+    } catch (err) { }
   };
 
   const handleDelete = async (id: string) => {
+    if (!window.confirm("¿Eliminar vendedor?")) return;
     try {
-      await axios.delete(url + id);
+      await axios.delete(urlServer + id);
       fetchVendedores();
-    } catch (error) {
-      console.error("Error al eliminar vendedor", error);
-    }
+    } catch (err) { }
   };
 
-  const handleEdit = (id: string) => {
-    const vendedor = vendedores.find((v) => v._id === id);
-    if (vendedor) {
-      setEditVendedorId(id);
-      setEditedVendedor({ ...vendedor });
-    }
+  const handleEdit = (vendedor: Vendedor) => {
+    setEditId(vendedor._id || null);
+    setNewVendedor({ ...vendedor });
+    setShowModal(true);
   };
 
-  const handleSaveEdit = async () => {
-    if (editVendedorId && editedVendedor) {
-      try {
-        await axios.put(url + editVendedorId, editedVendedor);
-        setEditVendedorId(null);
-        setEditedVendedor(null);
-        fetchVendedores();
-      } catch (error) {
-        console.error("Error al editar vendedor", error);
-      }
-    }
-  };
+  const columns: DataTableColumn<Vendedor>[] = [
+    { key: "nombre", label: "Nombre" },
+    { key: "correo", label: "Correo" },
+    { key: "telefono", label: "Teléfono" },
+  ];
+
+  const totalPages = Math.ceil(filteredVendedores.length / itemsPerPage);
+  const paginated = filteredVendedores.slice((currentPage-1)*itemsPerPage, currentPage*itemsPerPage);
 
   return (
-    <div className="container mt-4">
-      <div className="d-flex justify-content-between mb-3">
-        <Button onClick={() => setShowModal(true)}>Agregar Vendedor</Button>
+    <div className="container-fluid mt-4 px-1 px-sm-3">
+      <div className="d-flex flex-column flex-md-row justify-content-between align-items-stretch gap-2 mb-3">
+        <SearchBar
+          value={searchTerm}
+          onChange={handleSearch}
+          placeholder="Buscar por nombre, correo o teléfono..."
+          className="flex-grow-1"
+        />
+        <Button variant="success" onClick={() => { setShowModal(true); setEditId(null); setNewVendedor({ ...emptyVendedor }); }}>
+          Agregar Vendedor
+        </Button>
       </div>
-
-      <Table striped bordered hover>
-        <thead>
-          <tr>
-            <th>Nombre</th>
-            <th>Correo</th>
-            <th>Teléfono</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {vendedores.map((v) => (
-            <tr key={v._id}>
-              <td>
-                {editVendedorId === v._id ? (
-                  <Form.Control
-                    value={editedVendedor?.nombre}
-                    onChange={(e) => setEditedVendedor({ ...editedVendedor!, nombre: e.target.value })}
-                  />
-                ) : (
-                  v.nombre
-                )}
-              </td>
-              <td>
-                {editVendedorId === v._id ? (
-                  <Form.Control
-                    value={editedVendedor?.correo}
-                    onChange={(e) => setEditedVendedor({ ...editedVendedor!, correo: e.target.value })}
-                  />
-                ) : (
-                  v.correo
-                )}
-              </td>
-              <td>
-                {editVendedorId === v._id ? (
-                  <Form.Control
-                    value={editedVendedor?.telefono}
-                    onChange={(e) => setEditedVendedor({ ...editedVendedor!, telefono: e.target.value })}
-                  />
-                ) : (
-                  v.telefono
-                )}
-              </td>
-              <td>
-                {editVendedorId === v._id ? (
-                  <Button variant="primary" onClick={handleSaveEdit}>
-                    Guardar
-                  </Button>
-                ) : (
-                  <>
-                    <Button variant="warning" className="me-2" onClick={() => handleEdit(v._id!)}>
-                      Editar
-                    </Button>
-                    <Button variant="danger" onClick={() => handleDelete(v._id!)}>
-                      Eliminar
-                    </Button>
-                  </>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </Table>
-
-      {/* Modal agregar */}
-      <Modal show={showModal} onHide={() => setShowModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Agregar Vendedor</Modal.Title>
+      <div className="table-responsive" style={{ minHeight: `calc(100vh - 270px)`, maxHeight: `calc(100vh - 270px)`, overflowY: "auto", background: "#fff", borderRadius: 8, boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}>
+        <DataTable
+          columns={columns}
+          data={paginated}
+          actions={(vendedor) => (
+            <div className="d-flex flex-column flex-sm-row align-items-stretch gap-1">
+              <Button variant="warning" size="sm" className="w-100 w-sm-auto" onClick={() => handleEdit(vendedor)}>Editar</Button>
+              <Button variant="danger" size="sm" className="w-100 w-sm-auto" onClick={() => handleDelete(vendedor._id!)}>Eliminar</Button>
+            </div>
+          )}
+          className="small"
+          style={{ marginBottom: 0 }}
+        />
+      </div>
+      <div className="d-flex justify-content-center my-3">
+        <PaginationCompact currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
+      </div>
+      <Modal show={showModal} onHide={() => setShowModal(false)} size="lg" centered>
+        <Modal.Header closeButton className="bg-light border-bottom">
+          <Modal.Title>{editId ? "Editar Vendedor" : "Agregar Vendedor"}</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
-          <Form.Group className="mb-2">
-            <Form.Label>Nombre</Form.Label>
-            <Form.Control
-              value={newVendedor.nombre}
-              onChange={(e) => setNewVendedor({ ...newVendedor, nombre: e.target.value })}
-            />
-          </Form.Group>
-          <Form.Group className="mb-2">
-            <Form.Label>Correo</Form.Label>
-            <Form.Control
-              value={newVendedor.correo}
-              onChange={(e) => setNewVendedor({ ...newVendedor, correo: e.target.value })}
-            />
-          </Form.Group>
-          <Form.Group className="mb-2">
-            <Form.Label>Teléfono</Form.Label>
-            <Form.Control
-              value={newVendedor.telefono}
-              onChange={(e) => setNewVendedor({ ...newVendedor, telefono: e.target.value })}
-            />
-          </Form.Group>
+        <Modal.Body className="px-4 py-3">
+          <Form>
+            <Row>
+              <Col md={4} className="mb-3">
+                <Form.Label>Nombre</Form.Label>
+                <Form.Control 
+                  type="text" 
+                  value={newVendedor.nombre} 
+                  onChange={e => setNewVendedor({ ...newVendedor, nombre: e.target.value })} 
+                />
+              </Col>
+              <Col md={4} className="mb-3">
+                <Form.Label>Correo</Form.Label>
+                <Form.Control 
+                  type="email" 
+                  value={newVendedor.correo} 
+                  onChange={e => setNewVendedor({ ...newVendedor, correo: e.target.value })} 
+                />
+              </Col>
+              <Col md={4} className="mb-3">
+                <Form.Label>Teléfono</Form.Label>
+                <Form.Control 
+                  type="text" 
+                  value={newVendedor.telefono} 
+                  onChange={e => setNewVendedor({ ...newVendedor, telefono: e.target.value })} 
+                />
+              </Col>
+            </Row>
+          </Form>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>
-            Cancelar
-          </Button>
-          <Button variant="success" onClick={handleAddVendedor}>
-            Agregar
-          </Button>
+          <Button variant="secondary" onClick={() => setShowModal(false)}>Cancelar</Button>
+          <Button variant="primary" onClick={handleSave}>Guardar</Button>
         </Modal.Footer>
       </Modal>
     </div>

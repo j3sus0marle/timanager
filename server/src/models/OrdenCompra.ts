@@ -5,6 +5,7 @@ export interface IOrdenCompra extends Document {
   fecha: Date;
   proveedor: mongoose.Types.ObjectId;
   razonSocial: mongoose.Types.ObjectId;
+  vendedor?: mongoose.Types.ObjectId;
   datosOrden: any; // JSON flexible que puede variar en estructura
 }
 
@@ -30,6 +31,11 @@ const OrdenCompraSchema: Schema = new Schema({
     ref: 'RazonSocial', 
     
   },
+  vendedor: { 
+    type: Schema.Types.ObjectId, 
+    ref: 'Vendedor', 
+    required: false
+  },
   datosOrden: { 
     type: Schema.Types.Mixed, 
     
@@ -43,5 +49,6 @@ const OrdenCompraSchema: Schema = new Schema({
 OrdenCompraSchema.index({ fecha: -1 });
 OrdenCompraSchema.index({ proveedor: 1 });
 OrdenCompraSchema.index({ razonSocial: 1 });
+OrdenCompraSchema.index({ vendedor: 1 });
 
 export default mongoose.model<IOrdenCompra>('OrdenCompra', OrdenCompraSchema);

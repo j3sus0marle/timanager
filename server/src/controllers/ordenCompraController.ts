@@ -6,6 +6,7 @@ import * as path from 'path';
 import OrdenCompra from '../models/OrdenCompra';
 import Proveedor from '../models/Proveedor';
 import RazonSocial from '../models/RazonSocial';
+import Vendedor from '../models/Vendedor';
 
 const execFileAsync = promisify(execFile);
 
@@ -14,6 +15,7 @@ export const getOrdenesCompra = async (req: Request, res: Response) => {
     const ordenesCompra = await OrdenCompra.find()
       .populate('proveedor', 'empresa')
       .populate('razonSocial', 'nombre rfc')
+      .populate('vendedor', 'nombre correo telefono')
       .sort({ fecha: -1 });
     res.json(ordenesCompra);
   } catch (err) {
@@ -26,7 +28,8 @@ export const getOrdenCompraById = async (req: Request, res: Response) => {
   try {
     const ordenCompra = await OrdenCompra.findById(req.params.id)
       .populate('proveedor')
-      .populate('razonSocial');
+      .populate('razonSocial')
+      .populate('vendedor');
     if (!ordenCompra) {
       return res.status(404).json({ error: 'Orden de compra no encontrada' });
     }
@@ -39,7 +42,7 @@ export const getOrdenCompraById = async (req: Request, res: Response) => {
 
 export const createOrdenCompra = async (req: Request, res: Response) => {
   try {
-    const { numeroOrden, fecha, proveedor, razonSocial, datosOrden } = req.body;
+    const { numeroOrden, fecha, proveedor, razonSocial, vendedor, datosOrden } = req.body;
     
     // Validar que el proveedor existe
     const proveedorExists = await Proveedor.findById(proveedor);
@@ -52,12 +55,21 @@ export const createOrdenCompra = async (req: Request, res: Response) => {
     if (!razonSocialExists) {
       return res.status(400).json({ error: 'La razón social especificada no existe' });
     }
+
+    // Validar vendedor si se proporciona
+    if (vendedor) {
+      const vendedorExists = await Vendedor.findById(vendedor);
+      if (!vendedorExists) {
+        return res.status(400).json({ error: 'El vendedor especificado no existe' });
+      }
+    }
     
     const ordenCompra = new OrdenCompra({
       numeroOrden,
       fecha: fecha ? new Date(fecha) : new Date(),
       proveedor,
       razonSocial,
+      vendedor: vendedor || undefined,
       datosOrden
     });
     
@@ -66,7 +78,8 @@ export const createOrdenCompra = async (req: Request, res: Response) => {
     // Devolver la orden con los datos poblados
     const ordenCreada = await OrdenCompra.findById(ordenCompra._id)
       .populate('proveedor', 'empresa')
-      .populate('razonSocial', 'nombre rfc');
+      .populate('razonSocial', 'nombre rfc')
+      .populate('vendedor', 'nombre correo telefono');
     
     res.status(201).json(ordenCreada);
   } catch (err: any) {
@@ -81,7 +94,7 @@ export const createOrdenCompra = async (req: Request, res: Response) => {
 
 export const updateOrdenCompra = async (req: Request, res: Response) => {
   try {
-    const { numeroOrden, fecha, proveedor, razonSocial, datosOrden } = req.body;
+    const { numeroOrden, fecha, proveedor, razonSocial, vendedor, datosOrden } = req.body;
     
     // Si se cambia el proveedor, validar que existe
     if (proveedor) {
@@ -98,17 +111,27 @@ export const updateOrdenCompra = async (req: Request, res: Response) => {
         return res.status(400).json({ error: 'La razón social especificada no existe' });
       }
     }
+
+    // Si se cambia el vendedor, validar que existe
+    if (vendedor) {
+      const vendedorExists = await Vendedor.findById(vendedor);
+      if (!vendedorExists) {
+        return res.status(400).json({ error: 'El vendedor especificado no existe' });
+      }
+    }
     
     const updateData: any = {};
     if (numeroOrden) updateData.numeroOrden = numeroOrden;
     if (fecha) updateData.fecha = new Date(fecha);
     if (proveedor) updateData.proveedor = proveedor;
     if (razonSocial) updateData.razonSocial = razonSocial;
+    if (vendedor !== undefined) updateData.vendedor = vendedor || null;
     if (datosOrden) updateData.datosOrden = datosOrden;
     
     const ordenCompra = await OrdenCompra.findByIdAndUpdate(req.params.id, updateData, { new: true })
       .populate('proveedor', 'empresa')
-      .populate('razonSocial', 'nombre rfc');
+      .populate('razonSocial', 'nombre rfc')
+      .populate('vendedor', 'nombre correo telefono');
       
     if (!ordenCompra) {
       return res.status(404).json({ error: 'Orden de compra no encontrada' });

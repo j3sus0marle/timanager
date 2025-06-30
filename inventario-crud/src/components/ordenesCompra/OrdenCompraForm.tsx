@@ -9,7 +9,7 @@ import {
   ListGroup,
   Badge
 } from "react-bootstrap";
-import { Proveedor, RazonSocial } from "../../types";
+import { Proveedor, RazonSocial, Vendedor } from "../../types";
 import axios from "axios";
 import ModalResultados from "./ModalResultados";
 
@@ -36,6 +36,12 @@ const OrdenCompraForm: React.FC<OrdenCompraFormProps> = ({ show, onHide, onSave,
   const [razonSocialSeleccionada, setRazonSocialSeleccionada] = useState<RazonSocial | null>(null);
   const [razonesSocialesSugerencias, setRazonesSocialesSugerencias] = useState<RazonSocial[]>([]);
   const [mostrarSugerenciasRazonSocial, setMostrarSugerenciasRazonSocial] = useState(false);
+  
+  // Estados para vendedor
+  const [vendedorBusqueda, setVendedorBusqueda] = useState("");
+  const [vendedorSeleccionado, setVendedorSeleccionado] = useState<Vendedor | null>(null);
+  const [vendedoresSugerencias, setVendedoresSugerencias] = useState<Vendedor[]>([]);
+  const [mostrarSugerenciasVendedor, setMostrarSugerenciasVendedor] = useState(false);
   
   // Estado para archivo PDF
   const [archivoPdf, setArchivoPdf] = useState<File | null>(null);
@@ -171,6 +177,26 @@ const OrdenCompraForm: React.FC<OrdenCompraFormProps> = ({ show, onHide, onSave,
     }
   };
 
+  // Cargar vendedores
+  const buscarVendedores = async (termino: string) => {
+    if (termino.length < 2) {
+      setVendedoresSugerencias([]);
+      return;
+    }
+    
+    try {
+      const response = await axios.get<Vendedor[]>(`${urlServer}vendedores/`);
+      const filtered = response.data.filter(vendedor =>
+        vendedor.nombre.toLowerCase().includes(termino.toLowerCase()) ||
+        vendedor.correo.toLowerCase().includes(termino.toLowerCase())
+      );
+      setVendedoresSugerencias(filtered.slice(0, 5));
+    } catch (error) {
+      console.error("Error al buscar vendedores:", error);
+      setVendedoresSugerencias([]);
+    }
+  };
+
   // Efectos para búsqueda
   useEffect(() => {
     if (proveedorBusqueda) {
@@ -183,6 +209,12 @@ const OrdenCompraForm: React.FC<OrdenCompraFormProps> = ({ show, onHide, onSave,
       buscarRazonesSociales(razonSocialBusqueda);
     }
   }, [razonSocialBusqueda]);
+
+  useEffect(() => {
+    if (vendedorBusqueda) {
+      buscarVendedores(vendedorBusqueda);
+    }
+  }, [vendedorBusqueda]);
 
   // Manejar cambio en búsqueda de proveedor
   const handleProveedorBusquedaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -272,6 +304,34 @@ const OrdenCompraForm: React.FC<OrdenCompraFormProps> = ({ show, onHide, onSave,
     }
   };
 
+  // Manejar cambio en búsqueda de vendedor
+  const handleVendedorBusquedaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const valor = e.target.value;
+    setVendedorBusqueda(valor);
+    setMostrarSugerenciasVendedor(true);
+    
+    if (!valor) {
+      setVendedorSeleccionado(null);
+      setVendedoresSugerencias([]);
+    }
+  };
+
+  // Manejar selección de vendedor
+  const handleVendedorSeleccion = (vendedor: Vendedor) => {
+    setVendedorSeleccionado(vendedor);
+    setVendedorBusqueda(vendedor.nombre);
+    setMostrarSugerenciasVendedor(false);
+    setVendedoresSugerencias([]);
+  };
+
+  // Manejar Enter en vendedor
+  const handleVendedorKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && vendedoresSugerencias.length > 0) {
+      e.preventDefault();
+      handleVendedorSeleccion(vendedoresSugerencias[0]);
+    }
+  };
+
   // Manejar cambio de archivo PDF
   const handlePdfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -335,6 +395,12 @@ const OrdenCompraForm: React.FC<OrdenCompraFormProps> = ({ show, onHide, onSave,
           direccionEmpresa: razonSocialSeleccionada.direccionEmpresa,
           emailFacturacion: razonSocialSeleccionada.emailFacturacion
         },
+        vendedor: vendedorSeleccionado ? {
+          id: vendedorSeleccionado._id,
+          nombre: vendedorSeleccionado.nombre,
+          correo: vendedorSeleccionado.correo,
+          telefono: vendedorSeleccionado.telefono
+        } : null,
         direccionEnvio: direccionEnvioSeleccionada !== null ? {
           indice: direccionEnvioSeleccionada,
           ...razonSocialSeleccionada.direccionEnvio[direccionEnvioSeleccionada]
@@ -692,6 +758,56 @@ const OrdenCompraForm: React.FC<OrdenCompraFormProps> = ({ show, onHide, onSave,
                           <Badge bg="info" className="ms-2 small">Seleccionada</Badge>
                         </>
                       )}
+                    </Alert>
+                  )}
+                </div>
+              </Col>
+            </Row>
+
+            {/* Sección de Vendedor */}
+            <Row className="mb-4">
+              <Col>
+                <div className="h-100 p-3" style={{ backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #dee2e6' }}>
+                  <h6 className="text-primary mb-3">Seleccionar Vendedor</h6>
+                  <Form.Group className="mb-3">
+                    <Form.Label>Buscar Vendedor *</Form.Label>
+                    <Form.Control
+                      type="text"
+                      value={vendedorBusqueda}
+                      onChange={handleVendedorBusquedaChange}
+                      onKeyDown={handleVendedorKeyDown}
+                      placeholder="Escriba el nombre del vendedor"
+                      required
+                    />
+                    {mostrarSugerenciasVendedor && vendedoresSugerencias.length > 0 && (
+                      <ListGroup className="mt-2" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                        {vendedoresSugerencias.map((vendedor) => (
+                          <ListGroup.Item
+                            key={vendedor._id}
+                            action
+                            onClick={() => handleVendedorSeleccion(vendedor)}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            <strong>{vendedor.nombre}</strong>
+                            <br />
+                            <small className="text-muted">
+                              {vendedor.correo} - {vendedor.telefono}
+                            </small>
+                          </ListGroup.Item>
+                        ))}
+                      </ListGroup>
+                    )}
+                  </Form.Group>
+
+                  {vendedorSeleccionado && (
+                    <Alert variant="success" className="mb-0 small">
+                      <strong>Vendedor Seleccionado:</strong>
+                      <br />
+                      <strong>Nombre:</strong> {vendedorSeleccionado.nombre}
+                      <br />
+                      <strong>Email:</strong> {vendedorSeleccionado.correo}
+                      <br />
+                      <strong>Teléfono:</strong> {vendedorSeleccionado.telefono}
                     </Alert>
                   )}
                 </div>

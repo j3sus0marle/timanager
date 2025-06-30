@@ -115,6 +115,7 @@ export interface OrdenCompra {
   fecha: Date | string;
   proveedor: string | Proveedor;
   razonSocial: string | RazonSocial;
+  vendedor?: string | Vendedor;
   datosOrden: any;
   createdAt?: string;
   updatedAt?: string;
