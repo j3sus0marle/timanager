@@ -233,7 +233,7 @@ export const procesarPdf = async (req: Request, res: Response) => {
     
     try {
       // Determinar qué script usar según el proveedor
-      const scriptPath = getScriptPath(proveedor);
+      const scriptPath = await getScriptPath(proveedor);
       
       if (!scriptPath) {
         return res.status(400).json({ 
@@ -300,19 +300,35 @@ export const procesarPdf = async (req: Request, res: Response) => {
 
 /**
  * Determina qué script usar según el proveedor
+ * Acepta tanto el nombre de la empresa como un ID de proveedor
  */
-function getScriptPath(proveedor: string): string | null {
+async function getScriptPath(proveedorInfo: string): Promise<string | null> {
   const scriptsDir = path.join(__dirname, '..', '..', 'scripts');
   
-  // Normalizar nombre del proveedor para comparación
-  const proveedorNormalizado = proveedor.toLowerCase().trim();
+  let nombreProveedor = proveedorInfo;
   
-  // Mapeo de proveedores a scripts
+  // Si el parámetro parece ser un ID de MongoDB, buscar el proveedor en la BD
+  if (proveedorInfo.match(/^[0-9a-fA-F]{24}$/)) {
+    try {
+      const proveedor = await Proveedor.findById(proveedorInfo);
+      if (proveedor) {
+        nombreProveedor = proveedor.empresa;
+      }
+    } catch (error) {
+      console.warn('Error al buscar proveedor por ID:', error);
+    }
+  }
+  
+  // Normalizar nombre del proveedor para comparación
+  const proveedorNormalizado = nombreProveedor.toLowerCase().trim();
+  
+  // Mapeo de proveedores a scripts (incluyendo variaciones del nombre)
   const scriptMap: { [key: string]: string } = {
     'syscom': 'extraer_datos_syscom.py',
+    'portentum': 'extraer_datos_portentum.py',
+    'portenntum': 'extraer_datos_portentum.py', // Variación con doble N
     'cti': 'extraer_datos_cti.py',
     'nextiraone': 'extraer_datos_nextiraone.py',
-    // Agregar más proveedores aquí según sea necesario
   };
 
   // Buscar coincidencia exacta primero
@@ -323,7 +339,7 @@ function getScriptPath(proveedor: string): string | null {
     }
   }
 
-  // Buscar coincidencia parcial
+  // Buscar coincidencia parcial (el nombre del proveedor contiene alguna clave)
   for (const [key, scriptName] of Object.entries(scriptMap)) {
     if (proveedorNormalizado.includes(key) || key.includes(proveedorNormalizado)) {
       const scriptPath = path.join(scriptsDir, scriptName);
@@ -333,7 +349,7 @@ function getScriptPath(proveedor: string): string | null {
     }
   }
 
-  console.warn(`No se encontró script para el proveedor: ${proveedor}`);
+  console.warn(`No se encontró script para el proveedor: ${nombreProveedor} (original: ${proveedorInfo})`);
   return null;
 }
 
@@ -586,6 +602,182 @@ export const descargarPdfOrdenCompra = async (req: Request, res: Response) => {
     res.status(500).json({ 
       error: 'Error al descargar PDF de orden de compra',
       detalles: err.message
+    });
+  }
+};
+
+/**
+ * Crear orden de compra desde PDF con detección automática del proveedor
+ */
+export const crearOrdenDesdePdf = async (req: Request, res: Response) => {
+  try {
+    // Verificar que se subió un archivo
+    if (!req.file) {
+      return res.status(400).json({ error: 'No se proporcionó ningún archivo PDF' });
+    }
+
+    const { 
+      proveedor: proveedorId, 
+      razonSocial: razonSocialId, 
+      vendedor: vendedorId,
+      direccionEnvio,
+      datosAdicionales 
+    } = req.body;
+
+    // Validar que se proporcionaron los datos mínimos
+    if (!proveedorId || !razonSocialId) {
+      return res.status(400).json({ 
+        error: 'Debe especificar el proveedor y la razón social' 
+      });
+    }
+
+    // Validar que el proveedor existe
+    const proveedorData = await Proveedor.findById(proveedorId);
+    if (!proveedorData) {
+      return res.status(400).json({ error: 'El proveedor especificado no existe' });
+    }
+    
+    // Validar que la razón social existe
+    const razonSocialData = await RazonSocial.findById(razonSocialId);
+    if (!razonSocialData) {
+      return res.status(400).json({ error: 'La razón social especificada no existe' });
+    }
+
+    // Validar vendedor si se proporciona
+    let vendedorData = null;
+    if (vendedorId) {
+      vendedorData = await Vendedor.findById(vendedorId);
+      if (!vendedorData) {
+        return res.status(400).json({ error: 'El vendedor especificado no existe' });
+      }
+    }
+
+    const rutaArchivo = req.file.path;
+    
+    try {
+      // Determinar qué script usar según el proveedor
+      const scriptPath = await getScriptPath(proveedorData.empresa);
+      
+      if (!scriptPath) {
+        return res.status(400).json({ 
+          error: `No hay script de procesamiento disponible para el proveedor: ${proveedorData.empresa}` 
+        });
+      }
+
+      // Ejecutar el script Python para extraer datos del PDF
+      console.log(`Ejecutando script: ${scriptPath} con archivo: ${rutaArchivo}`);
+      
+      const { stdout, stderr } = await execFileAsync('python', [scriptPath, rutaArchivo], {
+        timeout: 30000 // 30 segundos de timeout
+      });
+
+      if (stderr) {
+        console.warn('Warning del script Python:', stderr);
+      }
+
+      // Parsear el resultado JSON
+      let datosExtraidos;
+      try {
+        datosExtraidos = JSON.parse(stdout);
+      } catch (parseError) {
+        console.error('Error al parsear JSON del script:', parseError);
+        console.error('Salida del script:', stdout);
+        return res.status(500).json({ 
+          error: 'Error al procesar la respuesta del script de extracción' 
+        });
+      }
+
+      // Generar número de orden único
+      const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+      const numeroOrden = `OC-${proveedorData.empresa.substring(0, 3).toUpperCase()}-${timestamp}-${random}`;
+
+      // Crear la orden de compra en la base de datos
+      const ordenCompra = new OrdenCompra({
+        numeroOrden,
+        fecha: new Date(),
+        proveedor: proveedorId,
+        razonSocial: razonSocialId,
+        vendedor: vendedorId || undefined,
+        datosOrden: {
+          direccionEnvio,
+          productos: datosExtraidos.productos || [],
+          totalesCalculados: datosExtraidos.totales || {},
+          datosPdf: datosExtraidos,
+          datosAdicionales
+        }
+      });
+      
+      await ordenCompra.save();
+      
+      // Preparar datos para generar PDF de orden de compra
+      const datosParaPdf = {
+        numeroOrden,
+        fecha: new Date().toLocaleDateString('es-MX'),
+        proveedor: proveedorData.toObject(),
+        razonSocial: razonSocialData.toObject(),
+        vendedor: vendedorData ? vendedorData.toObject() : undefined,
+        direccionEnvio,
+        productos: datosExtraidos.productos || [],
+        totalesCalculados: datosExtraidos.totales || {},
+        datosPdf: datosExtraidos,
+        datosAdicionales
+      };
+      
+      // Generar el PDF de la orden de compra
+      const pdfBuffer = await pdfGenerator.generarPdfOrdenCompra(datosParaPdf);
+      
+      // Crear directorio para PDFs si no existe
+      const pdfDir = path.join(__dirname, '..', '..', 'pdfs');
+      if (!fs.existsSync(pdfDir)) {
+        fs.mkdirSync(pdfDir, { recursive: true });
+      }
+      
+      // Guardar el PDF en el servidor
+      const nombreArchivoPdf = `OrdenCompra-${numeroOrden}-${Date.now()}.pdf`;
+      const rutaPdf = path.join(pdfDir, nombreArchivoPdf);
+      fs.writeFileSync(rutaPdf, pdfBuffer);
+      
+      // Actualizar la orden con la ruta del PDF
+      ordenCompra.rutaPdf = `pdfs/${nombreArchivoPdf}`;
+      await ordenCompra.save();
+      
+      // Devolver la orden creada con los datos poblados
+      const ordenCreada = await OrdenCompra.findById(ordenCompra._id)
+        .populate('proveedor', 'empresa')
+        .populate('razonSocial', 'nombre rfc')
+        .populate('vendedor', 'nombre correo telefono');
+
+      res.status(201).json({
+        success: true,
+        mensaje: 'Orden de compra creada exitosamente desde PDF',
+        orden: ordenCreada,
+        datosExtraidos: datosExtraidos,
+        archivoOriginal: req.file.originalname,
+        timestamp: new Date().toISOString()
+      });
+
+    } catch (error) {
+      console.error('Error al procesar PDF:', error);
+      return res.status(500).json({ 
+        error: 'Error al procesar el archivo PDF',
+        detalles: error instanceof Error ? error.message : 'Error desconocido'
+      });
+    } finally {
+      // Limpiar archivo temporal
+      try {
+        fs.unlinkSync(rutaArchivo);
+        console.log(`Archivo temporal eliminado: ${rutaArchivo}`);
+      } catch (unlinkError) {
+        console.warn('No se pudo eliminar archivo temporal:', unlinkError);
+      }
+    }
+
+  } catch (error) {
+    console.error('Error general en crearOrdenDesdePdf:', error);
+    res.status(500).json({ 
+      error: 'Error interno del servidor',
+      detalles: error instanceof Error ? error.message : 'Error desconocido'
     });
   }
 };

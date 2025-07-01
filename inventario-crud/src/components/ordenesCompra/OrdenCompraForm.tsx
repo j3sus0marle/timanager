@@ -21,7 +21,7 @@ interface OrdenCompraFormProps {
   onOrdenCreada?: () => void; // Nueva prop para notificar cuando se crea una orden
 }
 
-const OrdenCompraForm: React.FC<OrdenCompraFormProps> = ({ show, onHide, onSave, editId, onOrdenCreada }) => {
+const OrdenCompraForm: React.FC<OrdenCompraFormProps> = ({ show, onHide, editId, onOrdenCreada }) => {
   // Estados del formulario
   const [numeroOrden, setNumeroOrden] = useState("");
   const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
@@ -438,6 +438,36 @@ const OrdenCompraForm: React.FC<OrdenCompraFormProps> = ({ show, onHide, onSave,
     }
   };
 
+  // Crear orden directamente desde PDF con detección automática del proveedor
+  const crearOrdenDesdePdf = async (pdf: File, proveedorId: string, razonSocialId: string, vendedorId?: string): Promise<any> => {
+    const formData = new FormData();
+    formData.append('pdf', pdf);
+    formData.append('proveedor', proveedorId);
+    formData.append('razonSocial', razonSocialId);
+    if (vendedorId) {
+      formData.append('vendedor', vendedorId);
+    }
+    if (direccionEnvioSeleccionada !== null && razonSocialSeleccionada?.direccionEnvio[direccionEnvioSeleccionada]) {
+      formData.append('direccionEnvio', JSON.stringify({
+        indice: direccionEnvioSeleccionada,
+        ...razonSocialSeleccionada.direccionEnvio[direccionEnvioSeleccionada]
+      }));
+    }
+
+    try {
+      const response = await axios.post(`${urlServer}ordenes-compra/crear-desde-pdf`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      return response.data;
+    } catch (error) {
+      console.error('Error al crear orden desde PDF:', error);
+      throw new Error('Error al crear la orden desde el archivo PDF. Verifique que el archivo sea válido y que el proveedor sea compatible.');
+    }
+  };
+
   // Procesar PDF según el proveedor
   const procesarPdfSegunProveedor = async (pdf: File, empresaProveedor: string): Promise<any> => {
     const formData = new FormData();
@@ -628,6 +658,56 @@ const OrdenCompraForm: React.FC<OrdenCompraFormProps> = ({ show, onHide, onSave,
     setErrorProcesamiento(null);
     setProductosEditables([]);
     setTotalesCalculados({ subTotal: 0, iva: 0, total: 0 });
+  };
+
+  // Crear orden directamente desde PDF (sin modal intermedio)
+  const crearOrdenDirectamenteDesdePdf = async () => {
+    // Validaciones básicas
+    if (!proveedorSeleccionado) {
+      alert('Debe seleccionar un proveedor');
+      return;
+    }
+    
+    if (!razonSocialSeleccionada) {
+      alert('Debe seleccionar una razón social');
+      return;
+    }
+
+    if (!archivoPdf) {
+      alert('Debe seleccionar un archivo PDF');
+      return;
+    }
+
+    setProcesando(true);
+    setErrorProcesamiento(null);
+
+    try {
+      // Crear orden directamente desde PDF usando la nueva funcionalidad
+      const resultado = await crearOrdenDesdePdf(
+        archivoPdf,
+        proveedorSeleccionado._id ?? "",
+        razonSocialSeleccionada._id ?? "",
+        vendedorSeleccionado?._id ?? undefined
+      );
+
+      // Mostrar mensaje de éxito
+      alert(`¡Orden de compra creada exitosamente!\n\nDetalles:\n- Orden: ${resultado.orden?.numeroOrden}\n- Productos extraídos: ${resultado.datosExtraidos?.productos?.length || 0}\n- Total: $${resultado.datosExtraidos?.totales?.total?.toFixed(2) || '0.00'}`);
+      
+      // Notificar al componente padre que se creó una nueva orden
+      if (onOrdenCreada) {
+        onOrdenCreada();
+      }
+      
+      // Cerrar modal y resetear formulario
+      onHide();
+      resetFormulario();
+      
+    } catch (error) {
+      console.error('Error al crear orden desde PDF:', error);
+      setErrorProcesamiento(error instanceof Error ? error.message : 'Error desconocido al crear la orden');
+    } finally {
+      setProcesando(false);
+    }
   };
 
   return (
@@ -993,6 +1073,11 @@ const OrdenCompraForm: React.FC<OrdenCompraFormProps> = ({ show, onHide, onSave,
                   <strong>Archivo seleccionado:</strong> {archivoPdf.name}
                   <br />
                   <strong>Tamaño:</strong> {(archivoPdf.size / 1024 / 1024).toFixed(2)} MB
+                  <br />
+                  <small className="text-muted">
+                    <strong>Opciones:</strong> Use "Revisar Datos" para ver y editar los productos extraídos antes de crear la orden, 
+                    o "Crear Orden Directa" para generar automáticamente la orden con los datos extraídos del PDF.
+                  </small>
                 </Alert>
               )}
             </div>
@@ -1002,10 +1087,12 @@ const OrdenCompraForm: React.FC<OrdenCompraFormProps> = ({ show, onHide, onSave,
           <Button variant="secondary" onClick={onHide}>
             Cancelar
           </Button>
+          
+          {/* Botón para revisar datos extraídos */}
           <Button 
-            variant="primary" 
+            variant="outline-primary" 
             onClick={procesarOrden}
-            disabled={procesando}
+            disabled={procesando || !archivoPdf || !proveedorSeleccionado || !razonSocialSeleccionada}
           >
             {procesando ? (
               <>
@@ -1014,8 +1101,27 @@ const OrdenCompraForm: React.FC<OrdenCompraFormProps> = ({ show, onHide, onSave,
               </>
             ) : (
               <>
-                <i className="fas fa-cogs me-2"></i>
-                Procesar Orden
+                <i className="fas fa-search me-2"></i>
+                Revisar Datos
+              </>
+            )}
+          </Button>
+          
+          {/* Botón para crear orden directamente */}
+          <Button 
+            variant="success" 
+            onClick={crearOrdenDirectamenteDesdePdf}
+            disabled={procesando || !archivoPdf || !proveedorSeleccionado || !razonSocialSeleccionada}
+          >
+            {procesando ? (
+              <>
+                <i className="fas fa-spinner fa-spin me-2"></i>
+                Creando...
+              </>
+            ) : (
+              <>
+                <i className="fas fa-plus-circle me-2"></i>
+                Crear Orden Directa
               </>
             )}
           </Button>

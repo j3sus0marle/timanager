@@ -13,6 +13,7 @@ import {
   procesarPdf,
   generarPdfOrdenCompra,
   crearOrdenCompraConPdf,
+  crearOrdenDesdePdf,
   getPdfOrdenCompra,
   descargarPdfOrdenCompra
 } from '../controllers/ordenCompraController';
@@ -70,6 +71,9 @@ router.delete('/:id', asyncHandler(deleteOrdenCompra));
 
 // Ruta para procesar PDFs
 router.post('/procesar-pdf', upload.single('pdf'), asyncHandler(procesarPdf));
+
+// Ruta para crear orden completa desde PDF con detección automática
+router.post('/crear-desde-pdf', upload.single('pdf'), asyncHandler(crearOrdenDesdePdf));
 
 // Nuevas rutas para generar PDF
 router.post('/generar-pdf', asyncHandler(generarPdfOrdenCompra));
