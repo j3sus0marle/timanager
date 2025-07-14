@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-export interface IMaterialElectrico extends Document {
+export interface IMaterialCanalizacion extends Document {
   tipo: string;
   material: string;
   medida: string;
@@ -10,7 +10,7 @@ export interface IMaterialElectrico extends Document {
   fechaActualizacion: Date;
 }
 
-const MaterialElectricoSchema = new Schema<IMaterialElectrico>({
+const MaterialCanalizacionSchema = new Schema<IMaterialCanalizacion>({
   tipo: { 
     type: String, 
     required: true,
@@ -51,12 +51,12 @@ const MaterialElectricoSchema = new Schema<IMaterialElectrico>({
 });
 
 // Middleware para actualizar fechaActualizacion en cada update
-MaterialElectricoSchema.pre('findOneAndUpdate', function() {
+MaterialCanalizacionSchema.pre('findOneAndUpdate', function() {
   this.set({ fechaActualizacion: new Date() });
 });
 
-MaterialElectricoSchema.pre('updateOne', function() {
+MaterialCanalizacionSchema.pre('updateOne', function() {
   this.set({ fechaActualizacion: new Date() });
 });
 
-export default mongoose.model<IMaterialElectrico>('MaterialElectrico', MaterialElectricoSchema);
+export default mongoose.model<IMaterialCanalizacion>('MaterialCanalizacion', MaterialCanalizacionSchema);

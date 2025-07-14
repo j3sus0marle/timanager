@@ -1,13 +1,13 @@
 // src/pages/Mat-elec.tsx
-import MaterialElectricoList from "../components/materialElectrico/MaterialElectricoList";
+import MaterialCanalizacionList from "../components/materialCanalizacion/MaterialCanalizacionList";
 
-const MaterialElectrico: React.FC = () => {
+const MaterialCanalizacion: React.FC = () => {
   return (
     <div>
-      <h2>Material Eléctrico</h2>
-      <MaterialElectricoList />
+      <h2>Material de Canalización</h2>
+      <MaterialCanalizacionList />
     </div>
   );
 };
 
-export default MaterialElectrico;
+export default MaterialCanalizacion;

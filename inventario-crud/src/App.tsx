@@ -11,7 +11,7 @@ import Clientes from "./pages/Clientes";
 import Proveedores from "./pages/Proveedores";
 import RazonesSociales from "./pages/RazonesSociales";
 import Vendedores from "./pages/Vendedores";
-import MaterialElectrico from "./pages/Mat-elec";
+import MaterialCanalizacion from "./pages/Mat-elec";
 import Inventario from "./pages/Inventario";
 import InventarioExterior from "./pages/InventarioExterior";
 import Guias from "./pages/Guias";
@@ -186,7 +186,7 @@ function App() {
           <Route path="proveedores" element={<Proveedores />} />
           <Route path="razones-sociales" element={<RazonesSociales />} />
           <Route path="vendedores" element={<Vendedores />} />
-          <Route path="mat-elec" element={<MaterialElectrico />} />
+          <Route path="mat-elec" element={<MaterialCanalizacion />} />
           <Route path="inventario" element={<Inventario />} />
           <Route path="inventarioExterior" element={<InventarioExterior />} />
           <Route path="guias" element={<Guias />} />

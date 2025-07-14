@@ -123,7 +123,7 @@ export interface OrdenCompra {
   updatedAt?: string;
 }
 
-export interface MaterialElectrico {
+export interface MaterialCanalizacion {
   _id?: string;
   tipo: string;
   material: string;

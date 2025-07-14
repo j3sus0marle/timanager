@@ -1,12 +1,12 @@
 import axios from "axios";
 import { useState, useEffect } from "react";
-import { MaterialElectrico } from "../../types";
+import { MaterialCanalizacion } from "../../types";
 import SearchBar from "../common/SearchBar";
 import DataTable, { DataTableColumn } from "../common/DataTable";
 import PaginationCompact from "../common/PaginationCompact";
 import { Button, Modal, Form, Row, Col } from "react-bootstrap";
 
-const emptyMaterialElectrico: MaterialElectrico = { 
+const emptyMaterialCanalizacion: MaterialCanalizacion = { 
   tipo: "", 
   material: "", 
   medida: "", 
@@ -16,37 +16,37 @@ const emptyMaterialElectrico: MaterialElectrico = {
   fechaActualizacion: new Date().toISOString()
 };
 
-const MaterialElectricoList: React.FC = () => {
-  const [materialesElectricos, setMaterialesElectricos] = useState<MaterialElectrico[]>([]);
-  const [filteredMateriales, setFilteredMateriales] = useState<MaterialElectrico[]>([]);
+const MaterialCanalizacionList: React.FC = () => {
+  const [materialesCanalizacion, setMaterialesCanalizacion] = useState<MaterialCanalizacion[]>([]);
+  const [filteredMateriales, setFilteredMateriales] = useState<MaterialCanalizacion[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
-  const [newMaterial, setNewMaterial] = useState<MaterialElectrico>({ ...emptyMaterialElectrico });
+  const [newMaterial, setNewMaterial] = useState<MaterialCanalizacion>({ ...emptyMaterialCanalizacion });
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  const urlServer = import.meta.env.VITE_API_URL + "material-electrico/";
+  const urlServer = import.meta.env.VITE_API_URL + "material-canalizacion/";
 
-  const fetchMaterialesElectricos = async () => {
+  const fetchMaterialesCanalizacion = async () => {
     try {
-      const res = await axios.get<MaterialElectrico[]>(urlServer);
-      setMaterialesElectricos(res.data);
+      const res = await axios.get<MaterialCanalizacion[]>(urlServer);
+      setMaterialesCanalizacion(res.data);
       setFilteredMateriales(res.data);
     } catch (err) {
-      setMaterialesElectricos([]);
+      setMaterialesCanalizacion([]);
       setFilteredMateriales([]);
     }
   };
 
-  useEffect(() => { fetchMaterialesElectricos(); }, []);
+  useEffect(() => { fetchMaterialesCanalizacion(); }, []);
 
   const handleSearch = (term: string) => {
     setSearchTerm(term);
-    if (!term) setFilteredMateriales(materialesElectricos);
+    if (!term) setFilteredMateriales(materialesCanalizacion);
     else {
       const lower = term.toLowerCase();
-      setFilteredMateriales(materialesElectricos.filter(m =>
+      setFilteredMateriales(materialesCanalizacion.filter(m =>
         m.tipo.toLowerCase().includes(lower) ||
         m.material.toLowerCase().includes(lower) ||
         m.medida.toLowerCase().includes(lower) ||
@@ -69,25 +69,25 @@ const MaterialElectricoList: React.FC = () => {
         await axios.post(urlServer, materialToSave);
       }
       setShowModal(false);
-      setNewMaterial({ ...emptyMaterialElectrico });
+      setNewMaterial({ ...emptyMaterialCanalizacion });
       setEditId(null);
-      fetchMaterialesElectricos();
+      fetchMaterialesCanalizacion();
     } catch (err) { 
-      console.error("Error al guardar material eléctrico:", err);
+      console.error("Error al guardar material de canalización:", err);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm("¿Eliminar material eléctrico?")) return;
+    if (!window.confirm("¿Eliminar material de canalización?")) return;
     try {
       await axios.delete(urlServer + id);
-      fetchMaterialesElectricos();
+      fetchMaterialesCanalizacion();
     } catch (err) { 
-      console.error("Error al eliminar material eléctrico:", err);
+      console.error("Error al eliminar material de canalización:", err);
     }
   };
 
-  const handleEdit = (material: MaterialElectrico) => {
+  const handleEdit = (material: MaterialCanalizacion) => {
     setEditId(material._id || null);
     setNewMaterial({ ...material });
     setShowModal(true);
@@ -96,10 +96,10 @@ const MaterialElectricoList: React.FC = () => {
   const handleOpenCreateModal = () => {
     setShowModal(true);
     setEditId(null);
-    setNewMaterial({ ...emptyMaterialElectrico });
+    setNewMaterial({ ...emptyMaterialCanalizacion });
   };
 
-  const columns: DataTableColumn<MaterialElectrico>[] = [
+  const columns: DataTableColumn<MaterialCanalizacion>[] = [
     { key: "tipo", label: "Tipo" },
     { key: "material", label: "Material" },
     { key: "medida", label: "Medida" },
@@ -133,7 +133,7 @@ const MaterialElectricoList: React.FC = () => {
           className="flex-grow-1"
         />
         <Button variant="success" onClick={handleOpenCreateModal}>
-          Agregar Material Eléctrico
+          Agregar Material de Canalización
         </Button>
       </div>
       <div className="table-responsive" style={{ 
@@ -167,7 +167,7 @@ const MaterialElectricoList: React.FC = () => {
       
       <Modal show={showModal} onHide={() => setShowModal(false)} size="lg" centered>
         <Modal.Header closeButton className="bg-light border-bottom">
-          <Modal.Title>{editId ? "Editar Material Eléctrico" : "Agregar Material Eléctrico"}</Modal.Title>
+          <Modal.Title>{editId ? "Editar Material de Canalización" : "Agregar Material de Canalización"}</Modal.Title>
         </Modal.Header>
         <Modal.Body className="px-4 py-3">
           <Form>
@@ -176,7 +176,7 @@ const MaterialElectricoList: React.FC = () => {
                 <Form.Label>Tipo</Form.Label>
                 <Form.Control 
                   type="text" 
-                  placeholder="Ej. Cable, Tubo, Interruptor..."
+                  placeholder="Ej. Tubo, Canaleta, Charola..."
                   value={newMaterial.tipo} 
                   onChange={e => setNewMaterial({ ...newMaterial, tipo: e.target.value })} 
                 />
@@ -185,7 +185,7 @@ const MaterialElectricoList: React.FC = () => {
                 <Form.Label>Material</Form.Label>
                 <Form.Control 
                   type="text" 
-                  placeholder="Ej. Cobre, PVC, Acero..."
+                  placeholder="Ej. PVC, Galvanizado, Aluminio..."
                   value={newMaterial.material} 
                   onChange={e => setNewMaterial({ ...newMaterial, material: e.target.value })} 
                 />
@@ -194,7 +194,7 @@ const MaterialElectricoList: React.FC = () => {
                 <Form.Label>Medida</Form.Label>
                 <Form.Control 
                   type="text" 
-                  placeholder="Ej. 12 AWG, 3/4, 20A..."
+                  placeholder="Ej. 1/2, 3/4, 1, 2..."
                   value={newMaterial.medida} 
                   onChange={e => setNewMaterial({ ...newMaterial, medida: e.target.value })} 
                 />
@@ -213,7 +213,7 @@ const MaterialElectricoList: React.FC = () => {
                 <Form.Label>Proveedor</Form.Label>
                 <Form.Control 
                   type="text" 
-                  placeholder="Ej. Schneider Electric, ABB..."
+                  placeholder="Ej. CONDUIT, PLASTIMEX..."
                   value={newMaterial.proveedor} 
                   onChange={e => setNewMaterial({ ...newMaterial, proveedor: e.target.value })} 
                 />
@@ -253,4 +253,4 @@ const MaterialElectricoList: React.FC = () => {
   );
 };
 
-export default MaterialElectricoList;
+export default MaterialCanalizacionList;
