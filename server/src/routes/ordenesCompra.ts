@@ -15,7 +15,8 @@ import {
   crearOrdenCompraConPdf,
   crearOrdenDesdePdf,
   getPdfOrdenCompra,
-  descargarPdfOrdenCompra
+  descargarPdfOrdenCompra,
+  updateOrdenCompraConPdf
 } from '../controllers/ordenCompraController';
 
 const router = Router();
@@ -67,6 +68,7 @@ router.get('/razon-social/:razonSocialId', asyncHandler(getOrdenesByRazonSocial)
 router.get('/:id', asyncHandler(getOrdenCompraById));
 router.post('/', asyncHandler(createOrdenCompra));
 router.put('/:id', asyncHandler(updateOrdenCompra));
+router.put('/:id/actualizar-con-pdf', asyncHandler(updateOrdenCompraConPdf));
 router.delete('/:id', asyncHandler(deleteOrdenCompra));
 
 // Ruta para procesar PDFs
@@ -78,6 +80,10 @@ router.post('/crear-desde-pdf', upload.single('pdf'), asyncHandler(crearOrdenDes
 // Nuevas rutas para generar PDF
 router.post('/generar-pdf', asyncHandler(generarPdfOrdenCompra));
 router.post('/crear-con-pdf', asyncHandler(crearOrdenCompraConPdf));
+router.put('/:id/actualizar-con-pdf', asyncHandler(updateOrdenCompraConPdf));
+
+// Ruta para actualizar orden con PDF
+router.put('/:id/actualizar-con-pdf', asyncHandler(updateOrdenCompraConPdf));
 
 // Rutas para obtener PDFs de órdenes específicas
 router.get('/:id/pdf', asyncHandler(getPdfOrdenCompra)); // Ver PDF en el navegador

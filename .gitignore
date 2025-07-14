@@ -10,3 +10,5 @@ node_modules/
 
 server/.env
 inventario-crud/.env
+
+server/pdfs

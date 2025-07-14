@@ -19,6 +19,22 @@ export const getOrdenesCompra = async (req: Request, res: Response) => {
       .populate('razonSocial', 'nombre rfc')
       .populate('vendedor', 'nombre correo telefono')
       .sort({ fecha: -1 });
+
+    // Migrar órdenes que no tienen numeroCotizacion pero tienen datosPdf
+    const ordenesSinCotizacion = ordenesCompra.filter(orden => 
+      !orden.numeroCotizacion && 
+      orden.datosOrden?.datosPdf?.datosExtraidos?.folio
+    );
+
+    if (ordenesSinCotizacion.length > 0) {
+      console.log(`Migrando ${ordenesSinCotizacion.length} órdenes sin número de cotización`);
+      for (const orden of ordenesSinCotizacion) {
+        const folio = orden.datosOrden.datosPdf.datosExtraidos.folio;
+        await OrdenCompra.findByIdAndUpdate(orden._id, { numeroCotizacion: folio });
+        orden.numeroCotizacion = folio; // Actualizar en memoria para la respuesta
+      }
+    }
+
     res.json(ordenesCompra);
   } catch (err) {
     console.error('Error al obtener órdenes de compra:', err);
@@ -372,6 +388,10 @@ export const generarPdfOrdenCompra = async (req: Request, res: Response) => {
       datosOrden.numeroOrden = `OC-${timestamp}-${random}`;
     }
 
+    // Asegurar que se incluyan los valores por defecto para moneda y porcentaje de IVA
+    datosOrden.moneda = datosOrden.moneda || 'MXN';
+    datosOrden.porcentajeIvaSimbolico = datosOrden.porcentajeIvaSimbolico || '16';
+
     // Generar el PDF
     const pdfBuffer = await pdfGenerator.generarPdfOrdenCompra(datosOrden);
     
@@ -406,7 +426,9 @@ export const crearOrdenCompraConPdf = async (req: Request, res: Response) => {
       direccionEnvio,
       productos,
       totalesCalculados,
-      datosPdf 
+      datosPdf,
+      moneda,
+      porcentajeIvaSimbolico
     } = req.body;
     
     // Validar que el proveedor existe
@@ -441,6 +463,7 @@ export const crearOrdenCompraConPdf = async (req: Request, res: Response) => {
     // Crear la orden de compra en la base de datos
     const ordenCompra = new OrdenCompra({
       numeroOrden: numeroOrdenFinal,
+      numeroCotizacion: datosPdf?.datosExtraidos?.folio || undefined, // Extraer número de cotización del PDF
       fecha: fecha ? new Date(fecha) : new Date(),
       proveedor,
       razonSocial,
@@ -449,7 +472,9 @@ export const crearOrdenCompraConPdf = async (req: Request, res: Response) => {
         direccionEnvio,
         productos,
         totalesCalculados,
-        datosPdf
+        datosPdf,
+        moneda: moneda || 'MXN',
+        porcentajeIvaSimbolico: porcentajeIvaSimbolico || '16'
       }
     });
     
@@ -465,7 +490,9 @@ export const crearOrdenCompraConPdf = async (req: Request, res: Response) => {
       direccionEnvio,
       productos,
       totalesCalculados,
-      datosPdf
+      datosPdf,
+      moneda: moneda || 'MXN',
+      porcentajeIvaSimbolico: porcentajeIvaSimbolico || '16'
     };
     
     // Generar el PDF
@@ -508,6 +535,147 @@ export const crearOrdenCompraConPdf = async (req: Request, res: Response) => {
     } else {
       res.status(400).json({ 
         error: 'Error al crear orden de compra con PDF',
+        detalles: err.message
+      });
+    }
+  }
+};
+
+/**
+ * Actualizar orden de compra y regenerar PDF
+ */
+export const updateOrdenCompraConPdf = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { 
+      numeroOrden, 
+      fecha, 
+      proveedor, 
+      razonSocial, 
+      vendedor, 
+      direccionEnvio,
+      productos,
+      totalesCalculados,
+      datosPdf,
+      moneda,
+      porcentajeIvaSimbolico
+    } = req.body;
+    
+    // Buscar la orden existente
+    const ordenExistente = await OrdenCompra.findById(id);
+    if (!ordenExistente) {
+      return res.status(404).json({ error: 'Orden de compra no encontrada' });
+    }
+    
+    // Validar que el proveedor existe
+    const proveedorData = await Proveedor.findById(proveedor);
+    if (!proveedorData) {
+      return res.status(400).json({ error: 'El proveedor especificado no existe' });
+    }
+    
+    // Validar que la razón social existe
+    const razonSocialData = await RazonSocial.findById(razonSocial);
+    if (!razonSocialData) {
+      return res.status(400).json({ error: 'La razón social especificada no existe' });
+    }
+
+    // Validar vendedor si se proporciona
+    let vendedorData = null;
+    if (vendedor) {
+      vendedorData = await Vendedor.findById(vendedor);
+      if (!vendedorData) {
+        return res.status(400).json({ error: 'El vendedor especificado no existe' });
+      }
+    }
+    
+    // Actualizar la orden de compra en la base de datos
+    const updateData = {
+      numeroOrden: numeroOrden || ordenExistente.numeroOrden,
+      numeroCotizacion: datosPdf?.datosExtraidos?.folio || ordenExistente.numeroCotizacion,
+      fecha: fecha ? new Date(fecha) : ordenExistente.fecha,
+      proveedor,
+      razonSocial,
+      vendedor: vendedor || undefined,
+      datosOrden: {
+        direccionEnvio,
+        productos,
+        totalesCalculados,
+        datosPdf,
+        moneda: moneda || 'MXN',
+        porcentajeIvaSimbolico: porcentajeIvaSimbolico || '16'
+      }
+    };
+    
+    const ordenActualizada = await OrdenCompra.findByIdAndUpdate(id, updateData, { new: true })
+      .populate('proveedor')
+      .populate('razonSocial')
+      .populate('vendedor');
+    
+    if (!ordenActualizada) {
+      return res.status(500).json({ error: 'Error al actualizar la orden de compra' });
+    }
+    
+    // Preparar datos para generar PDF
+    const datosParaPdf = {
+      numeroOrden: ordenActualizada.numeroOrden,
+      fecha: new Date(ordenActualizada.fecha).toLocaleDateString('es-MX'),
+      proveedor: proveedorData.toObject(),
+      razonSocial: razonSocialData.toObject(),
+      vendedor: vendedorData ? vendedorData.toObject() : undefined,
+      direccionEnvio,
+      productos,
+      totalesCalculados,
+      datosPdf,
+      moneda: moneda || 'MXN',
+      porcentajeIvaSimbolico: porcentajeIvaSimbolico || '16'
+    };
+    
+    // Generar el PDF actualizado
+    const pdfBuffer = await pdfGenerator.generarPdfOrdenCompra(datosParaPdf);
+    
+    // Crear directorio para PDFs si no existe
+    const pdfDir = path.join(__dirname, '..', '..', 'pdfs');
+    if (!fs.existsSync(pdfDir)) {
+      fs.mkdirSync(pdfDir, { recursive: true });
+    }
+    
+    // Eliminar PDF anterior si existe
+    if (ordenExistente.rutaPdf) {
+      const rutaPdfAnterior = path.join(__dirname, '..', '..', ordenExistente.rutaPdf);
+      try {
+        if (fs.existsSync(rutaPdfAnterior)) {
+          fs.unlinkSync(rutaPdfAnterior);
+        }
+      } catch (error) {
+        console.warn('No se pudo eliminar PDF anterior:', error);
+      }
+    }
+    
+    // Guardar el nuevo PDF en el servidor
+    const nombreArchivoPdf = `OrdenCompra-${ordenActualizada.numeroOrden}-${Date.now()}.pdf`;
+    const rutaPdf = path.join(pdfDir, nombreArchivoPdf);
+    fs.writeFileSync(rutaPdf, pdfBuffer);
+    
+    // Actualizar la ruta del PDF en la orden
+    ordenActualizada.rutaPdf = `pdfs/${nombreArchivoPdf}`;
+    await ordenActualizada.save();
+    
+    // Configurar headers para la respuesta PDF
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="OrdenCompra-${ordenActualizada.numeroOrden}.pdf"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+    res.setHeader('X-Orden-Id', String(ordenActualizada._id));
+    
+    // Enviar el PDF
+    res.send(pdfBuffer);
+    
+  } catch (err: any) {
+    console.error('Error al actualizar orden de compra con PDF:', err);
+    if (err.code === 11000) {
+      res.status(400).json({ error: 'El número de orden ya existe' });
+    } else {
+      res.status(400).json({ 
+        error: 'Error al actualizar orden de compra con PDF',
         detalles: err.message
       });
     }
@@ -695,6 +863,7 @@ export const crearOrdenDesdePdf = async (req: Request, res: Response) => {
       // Crear la orden de compra en la base de datos
       const ordenCompra = new OrdenCompra({
         numeroOrden,
+        numeroCotizacion: datosExtraidos?.folio || undefined, // Extraer número de cotización del PDF
         fecha: new Date(),
         proveedor: proveedorId,
         razonSocial: razonSocialId,
@@ -704,7 +873,9 @@ export const crearOrdenDesdePdf = async (req: Request, res: Response) => {
           productos: datosExtraidos.productos || [],
           totalesCalculados: datosExtraidos.totales || {},
           datosPdf: datosExtraidos,
-          datosAdicionales
+          datosAdicionales,
+          moneda: 'MXN', // Valor por defecto
+          porcentajeIvaSimbolico: '16' // Valor por defecto
         }
       });
       
@@ -721,7 +892,9 @@ export const crearOrdenDesdePdf = async (req: Request, res: Response) => {
         productos: datosExtraidos.productos || [],
         totalesCalculados: datosExtraidos.totales || {},
         datosPdf: datosExtraidos,
-        datosAdicionales
+        datosAdicionales,
+        moneda: 'MXN', // Valor por defecto
+        porcentajeIvaSimbolico: '16' // Valor por defecto
       };
       
       // Generar el PDF de la orden de compra

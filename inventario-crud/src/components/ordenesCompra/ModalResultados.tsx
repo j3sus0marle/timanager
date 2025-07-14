@@ -15,12 +15,21 @@ interface ModalResultadosProps {
   onAgregarProducto: () => void;
   onVolverAlFormulario: () => void;
   onGenerarOrden?: (datosOrden: any) => Promise<void>;
+  editId?: string | null; // Añadido para identificar si está en modo edición
+  onCancelar?: () => void; // Nueva prop para manejar cancelación
 }
 
 // Tipos de moneda disponibles
 const MONEDAS = {
   MXN: { codigo: 'MXN', nombre: 'Pesos Mexicanos', simbolo: '$', locale: 'es-MX' },
   USD: { codigo: 'USD', nombre: 'Dólares Estadounidenses', simbolo: '$', locale: 'en-US' }
+};
+
+// Opciones de porcentaje de IVA disponibles (simbólicas para el PDF)
+const PORCENTAJES_IVA = {
+  '0': { valor: '0', nombre: '0% (Exento)' },
+  '8': { valor: '8', nombre: '8% (Frontera)' },
+  '16': { valor: '16', nombre: '16% (General)' }
 };
 
 // Componente optimizado para fila de producto individual
@@ -116,17 +125,23 @@ FilaProducto.displayName = 'FilaProducto';
 // Componente optimizado para los totales
 const ComponenteTotales = React.memo(({ 
   totales, 
-  moneda 
+  moneda,
+  porcentajeIvaSimbolico 
 }: { 
   totales: any, 
-  moneda: string 
+  moneda: string,
+  porcentajeIvaSimbolico?: string
 }) => {
   const porcentajeIva = useMemo(() => {
+    // Si se proporciona un porcentaje simbólico, usarlo; sino calcular desde los totales
+    if (porcentajeIvaSimbolico) {
+      return porcentajeIvaSimbolico;
+    }
     if (totales.subTotal > 0 && totales.iva > 0) {
       return ((totales.iva / totales.subTotal) * 100).toFixed(1);
     }
     return '16.0';
-  }, [totales.subTotal, totales.iva]);
+  }, [totales.subTotal, totales.iva, porcentajeIvaSimbolico]);
 
   const formatearMoneda = (valor: number) => {
     const monedaInfo = MONEDAS[moneda as keyof typeof MONEDAS];
@@ -200,12 +215,27 @@ const ModalResultados: React.FC<ModalResultadosProps> = React.memo(({
   onActualizarProducto,
   onAgregarProducto,
   onVolverAlFormulario,
-  onGenerarOrden
+  onGenerarOrden,
+  editId,
+  onCancelar
 }) => {
   // Estado para la moneda seleccionada
   const [monedaSeleccionada, setMonedaSeleccionada] = useState<string>('MXN');
+  // Estado para el porcentaje de IVA simbólico seleccionado
+  const [porcentajeIvaSimbolico, setPorcentajeIvaSimbolico] = useState<string>('16');
   // Estado para controlar el loading del botón de generar orden
   const [generandoOrden, setGenerandoOrden] = useState<boolean>(false);
+
+  // Detectar automáticamente el porcentaje de IVA al cargar los datos
+  React.useEffect(() => {
+    if (totalesCalculados.subTotal > 0 && totalesCalculados.iva > 0) {
+      const porcentajeDetectado = ((totalesCalculados.iva / totalesCalculados.subTotal) * 100).toFixed(0);
+      // Solo cambiar si es un porcentaje común y el usuario no ha cambiado manualmente
+      if (['0', '8', '16'].includes(porcentajeDetectado)) {
+        setPorcentajeIvaSimbolico(porcentajeDetectado);
+      }
+    }
+  }, [totalesCalculados]);
 
   const handleGenerarOrden = async () => {
     if (!onGenerarOrden || productosEditables.length === 0) return;
@@ -224,7 +254,8 @@ const ModalResultados: React.FC<ModalResultadosProps> = React.memo(({
         productos: productosEditables,
         totalesCalculados: totalesCalculados,
         datosPdf: datosOrdenCompletos?.datosPdf || datosOrdenCompletos?.pdfInfo,
-        moneda: monedaSeleccionada
+        moneda: monedaSeleccionada,
+        porcentajeIvaSimbolico: porcentajeIvaSimbolico
       };
       
       await onGenerarOrden(datosParaEnviar);
@@ -234,8 +265,16 @@ const ModalResultados: React.FC<ModalResultadosProps> = React.memo(({
       setGenerandoOrden(false);
     }
   };
+  const handleCerrarModal = () => {
+    if (onCancelar) {
+      onCancelar();
+    } else {
+      onVolverAlFormulario();
+    }
+  };
+
   return (
-    <Modal show={show} onHide={() => {}} size="xl" centered>
+    <Modal show={show} onHide={handleCerrarModal} size="xl" centered>
       <Modal.Header className="bg-success text-white">
         <Modal.Title>
           <i className="fas fa-check-circle me-2"></i>
@@ -277,17 +316,20 @@ const ModalResultados: React.FC<ModalResultadosProps> = React.memo(({
               </Row>
             )}
 
-            {/* Selector de moneda */}
+            {/* Selectores de configuración */}
             <div className="mb-4 p-3" style={{ backgroundColor: '#f0f8ff', borderRadius: '8px', border: '1px solid #b3d9ff' }}>
-              <Row className="align-items-center">
-                <Col md={6}>
-                  <h6 className="text-info mb-0">
-                    <i className="fas fa-money-bill-wave me-2"></i>
-                    Configuración de Moneda
+              <Row className="align-items-center mb-3">
+                <Col md={12}>
+                  <h6 className="text-info mb-3">
+                    <i className="fas fa-cogs me-2"></i>
+                    Configuración de la Orden
                   </h6>
                 </Col>
+              </Row>
+              
+              <Row>
                 <Col md={6}>
-                  <Form.Group className="mb-0">
+                  <Form.Group className="mb-3">
                     <Form.Label className="small fw-bold mb-1">Tipo de Moneda:</Form.Label>
                     <Form.Select
                       size="sm"
@@ -302,6 +344,27 @@ const ModalResultados: React.FC<ModalResultadosProps> = React.memo(({
                         {MONEDAS.USD.simbolo} {MONEDAS.USD.nombre} ({MONEDAS.USD.codigo})
                       </option>
                     </Form.Select>
+                  </Form.Group>
+                </Col>
+                
+                <Col md={6}>
+                  <Form.Group className="mb-3">
+                    <Form.Label className="small fw-bold mb-1">Porcentaje de IVA (Simbólico):</Form.Label>
+                    <Form.Select
+                      size="sm"
+                      value={porcentajeIvaSimbolico}
+                      onChange={(e) => setPorcentajeIvaSimbolico(e.target.value)}
+                      className="border-info"
+                    >
+                      {Object.entries(PORCENTAJES_IVA).map(([key, config]) => (
+                        <option key={key} value={key}>
+                          {config.nombre}
+                        </option>
+                      ))}
+                    </Form.Select>
+                    <Form.Text className="text-muted">
+                      <small><i className="fas fa-info-circle me-1"></i>Solo para mostrar en el PDF. El valor real se toma de la cotización.</small>
+                    </Form.Text>
                   </Form.Group>
                 </Col>
               </Row>
@@ -352,24 +415,13 @@ const ModalResultados: React.FC<ModalResultadosProps> = React.memo(({
                   <ComponenteTotales 
                     totales={totalesCalculados} 
                     moneda={monedaSeleccionada}
+                    porcentajeIvaSimbolico={porcentajeIvaSimbolico}
                   />
                 </Col>
               </Row>
             </div>
 
-            {/* Botón para agregar más productos */}
-            {productosEditables.length > 0 && (
-              <div className="mb-3">
-                <Button 
-                  variant="outline-primary" 
-                  size="sm"
-                  onClick={onAgregarProducto}
-                >
-                  <i className="fas fa-plus me-1"></i>
-                  Agregar Producto
-                </Button>
-              </div>
-            )}
+
 
             {/* Datos completos JSON (colapsible) */}
             <div className="mt-4">
@@ -400,6 +452,10 @@ const ModalResultados: React.FC<ModalResultadosProps> = React.memo(({
           <i className="fas fa-arrow-left me-2"></i>
           Volver al Formulario
         </Button>
+        <Button variant="outline-danger" onClick={handleCerrarModal}>
+          <i className="fas fa-times me-2"></i>
+          Cancelar
+        </Button>
         <Button 
           variant="success" 
           disabled={productosEditables.length === 0 || generandoOrden}
@@ -408,12 +464,12 @@ const ModalResultados: React.FC<ModalResultadosProps> = React.memo(({
           {generandoOrden ? (
             <>
               <Spinner animation="border" size="sm" className="me-2" />
-              Generando...
+              {editId ? 'Actualizando...' : 'Generando...'}
             </>
           ) : (
             <>
               <i className="fas fa-file-pdf me-2"></i>
-              Generar Orden
+              {editId ? 'Actualizar Orden' : 'Generar Orden'}
             </>
           )}
         </Button>

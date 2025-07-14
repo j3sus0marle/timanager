@@ -66,6 +66,7 @@ const OrdenCompraList: React.FC = () => {
       const lower = value.toLowerCase();
       setFilteredOrdenes(ordenesCompra.filter(orden =>
         orden.numeroOrden.toLowerCase().includes(lower) ||
+        (orden.numeroCotizacion && orden.numeroCotizacion.toLowerCase().includes(lower)) ||
         (typeof orden.proveedor === 'object' && orden.proveedor.empresa.toLowerCase().includes(lower)) ||
         (typeof orden.razonSocial === 'object' && orden.razonSocial.nombre.toLowerCase().includes(lower))
       ));
@@ -163,6 +164,11 @@ const OrdenCompraList: React.FC = () => {
       label: "Número de Orden",
     },
     {
+      key: "numeroCotizacion",
+      label: "Número de Cotización",
+      render: (orden) => orden.numeroCotizacion || 'N/A',
+    },
+    {
       key: "fecha",
       label: "Fecha",
       render: (orden) => new Date(orden.fecha).toLocaleDateString(),
@@ -190,7 +196,7 @@ const OrdenCompraList: React.FC = () => {
         <SearchBar
           value={searchTerm}
           onChange={handleSearch}
-          placeholder="Buscar por número de orden, proveedor o razón social..."
+          placeholder="Buscar por número de orden, cotización, proveedor o razón social..."
           className="flex-grow-1"
         />
         <Button variant="success" onClick={handleNew}>

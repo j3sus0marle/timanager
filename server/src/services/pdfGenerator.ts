@@ -33,6 +33,9 @@ interface OrdenCompraData {
     correo: string;
     telefono: string;
   };
+  // Nuevos campos agregados
+  moneda?: string;
+  porcentajeIvaSimbolico?: string;
   datosPdf?: {
     datosExtraidos?: {
       folio?: string;
@@ -139,14 +142,14 @@ export class PdfGeneratorService {
       
       // Totales
       subtotal: this.formatearMoneda(totales.subTotal),
-      iva: '16%', // Valor por defecto, se puede cambiar según el JSON
+      iva: `${datosOrden.porcentajeIvaSimbolico || '16'}%`, // Usar el porcentaje simbólico seleccionado
       importeIva: this.formatearMoneda(totales.iva),
       total: this.formatearMoneda(totales.total),
       
       // Información adicional
       usoMercancia: datosPdf.usoMercancia || 'G03 - GASTOS EN GENERAL',
       formaPago: datosPdf.formaPago || 'POR DEFINIR',
-      moneda: 'MXN'
+      moneda: datosOrden.moneda || 'MXN'
     };
     
     return plantillaVars;

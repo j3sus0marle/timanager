@@ -2,6 +2,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IOrdenCompra extends Document {
   numeroOrden: string;
+  numeroCotizacion?: string; // Número de cotización extraído del PDF
   fecha: Date;
   proveedor: mongoose.Types.ObjectId;
   razonSocial: mongoose.Types.ObjectId;
@@ -15,6 +16,11 @@ const OrdenCompraSchema: Schema = new Schema({
     type: String, 
     
     unique: true,
+    trim: true
+  },
+  numeroCotizacion: {
+    type: String,
+    required: false,
     trim: true
   },
   fecha: { 

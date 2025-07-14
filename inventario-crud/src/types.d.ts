@@ -112,6 +112,7 @@ export interface RazonSocial {
 export interface OrdenCompra {
   _id?: string;
   numeroOrden: string;
+  numeroCotizacion?: string; // Número de cotización extraído del PDF
   fecha: Date | string;
   proveedor: string | Proveedor;
   razonSocial: string | RazonSocial;

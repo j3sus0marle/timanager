@@ -217,6 +217,104 @@ const OrdenCompraForm: React.FC<OrdenCompraFormProps> = ({ show, onHide, editId,
     }
   }, [vendedorBusqueda]);
 
+  // Efecto para cargar datos cuando se edita una orden
+  useEffect(() => {
+    const cargarDatosOrden = async () => {
+      if (editId && show) {
+        try {
+          const response = await axios.get(`${urlServer}ordenes-compra/${editId}`);
+          const orden: any = response.data;
+          
+          // Cargar datos básicos
+          setNumeroOrden(orden.numeroOrden || '');
+          setFecha(orden.fecha ? new Date(orden.fecha).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
+          
+          // Cargar proveedor
+          if (typeof orden.proveedor === 'object') {
+            setProveedorSeleccionado(orden.proveedor);
+            setProveedorBusqueda(orden.proveedor.empresa || '');
+          }
+          
+          // Cargar razón social
+          if (typeof orden.razonSocial === 'object') {
+            setRazonSocialSeleccionada(orden.razonSocial);
+            setRazonSocialBusqueda(orden.razonSocial.nombre || '');
+            
+            // Si hay direcciones de envío, seleccionar la primera por defecto
+            if (orden.razonSocial.direccionEnvio && orden.razonSocial.direccionEnvio.length > 0) {
+              // Buscar la dirección que coincida con la guardada en datosOrden
+              let indiceSeleccionado = 0;
+              if (orden.datosOrden?.direccionEnvio?.indice !== undefined) {
+                indiceSeleccionado = orden.datosOrden.direccionEnvio.indice;
+              }
+              setDireccionEnvioSeleccionada(indiceSeleccionado);
+            }
+          }
+          
+          // Cargar vendedor
+          if (typeof orden.vendedor === 'object') {
+            setVendedorSeleccionado(orden.vendedor);
+            setVendedorBusqueda(orden.vendedor.nombre || '');
+          }
+          
+          // Si hay productos en datosOrden, cargarlos y mostrar modal de resultados
+          if (orden.datosOrden?.productos && orden.datosOrden.productos.length > 0) {
+            setProductosEditables(orden.datosOrden.productos);
+            
+            // Si hay totales, cargarlos
+            if (orden.datosOrden?.totalesCalculados) {
+              setTotalesCalculados(orden.datosOrden.totalesCalculados);
+            }
+            
+            // Cargar datos completos para el modal
+            setDatosOrdenCompletos({
+              numeroOrden: orden.numeroOrden,
+              fecha: orden.fecha,
+              proveedor: orden.proveedor,
+              razonSocial: orden.razonSocial,
+              vendedor: orden.vendedor,
+              direccionEnvio: orden.datosOrden.direccionEnvio,
+              datosPdf: orden.datosOrden.datosPdf,
+              pdfInfo: orden.datosOrden.datosPdf,
+              fechaProcesamiento: orden.createdAt
+            });
+            
+            // Mostrar modal de resultados para edición
+            setMostrarModalResultados(true);
+          }
+          
+        } catch (error) {
+          console.error('Error al cargar datos de la orden:', error);
+          setErrorProcesamiento('Error al cargar los datos de la orden para edición');
+        }
+      } else if (!editId && show) {
+        // Limpiar formulario para nueva orden
+        resetearFormulario();
+      }
+    };
+
+    cargarDatosOrden();
+  }, [editId, show]);
+
+  // Función para resetear el formulario
+  const resetearFormulario = () => {
+    setNumeroOrden('');
+    setFecha(new Date().toISOString().split('T')[0]);
+    setProveedorBusqueda('');
+    setProveedorSeleccionado(null);
+    setRazonSocialBusqueda('');
+    setRazonSocialSeleccionada(null);
+    setVendedorBusqueda('');
+    setVendedorSeleccionado(null);
+    setArchivoPdf(null);
+    setDireccionEnvioSeleccionada(null);
+    setProductosEditables([]);
+    setTotalesCalculados({ subTotal: 0, iva: 0, total: 0 });
+    setDatosOrdenCompletos(null);
+    setErrorProcesamiento(null);
+    setMostrarModalResultados(false);
+  };
+
   // Manejar cambio en búsqueda de proveedor
   const handleProveedorBusquedaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const valor = e.target.value;
@@ -595,12 +693,25 @@ const OrdenCompraForm: React.FC<OrdenCompraFormProps> = ({ show, onHide, editId,
   // Función para generar la orden de compra con PDF
   const generarOrdenCompra = async (datosOrden: any) => {
     try {
-      const response = await axios.post(`${urlServer}ordenes-compra/crear-con-pdf`, datosOrden, {
-        responseType: 'blob', // Para recibir el PDF como blob
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
+      let response;
+      
+      if (editId) {
+        // Modo edición: actualizar orden existente con regeneración de PDF
+        response = await axios.put(`${urlServer}ordenes-compra/${editId}/actualizar-con-pdf`, datosOrden, {
+          responseType: 'blob', // Para recibir el PDF como blob
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+      } else {
+        // Modo creación: crear nueva orden
+        response = await axios.post(`${urlServer}ordenes-compra/crear-con-pdf`, datosOrden, {
+          responseType: 'blob', // Para recibir el PDF como blob
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+      }
 
       // Crear URL para descargar el PDF
       const blob = new Blob([response.data as BlobPart], { type: 'application/pdf' });
@@ -624,7 +735,10 @@ const OrdenCompraForm: React.FC<OrdenCompraFormProps> = ({ show, onHide, editId,
       }
       
       // Mostrar mensaje de éxito
-      alert('Orden de compra generada exitosamente. El PDF se ha descargado automáticamente.');
+      const mensaje = editId 
+        ? 'Orden de compra actualizada exitosamente. El PDF se ha descargado automáticamente.'
+        : 'Orden de compra generada exitosamente. El PDF se ha descargado automáticamente.';
+      alert(mensaje);
       
       // Notificar al componente padre que se creó una nueva orden
       if (onOrdenCreada) {
@@ -634,30 +748,12 @@ const OrdenCompraForm: React.FC<OrdenCompraFormProps> = ({ show, onHide, editId,
       // Cerrar modales y resetear formulario
       setMostrarModalResultados(false);
       onHide();
-      resetFormulario();
+      resetearFormulario();
       
     } catch (error) {
       console.error('Error al generar orden de compra:', error);
 
     }
-  };
-
-  // Función para resetear el formulario
-  const resetFormulario = () => {
-    setNumeroOrden("");
-    setFecha(new Date().toISOString().split('T')[0]);
-    setProveedorBusqueda("");
-    setProveedorSeleccionado(null);
-    setRazonSocialBusqueda("");
-    setRazonSocialSeleccionada(null);
-    setVendedorBusqueda("");
-    setVendedorSeleccionado(null);
-    setArchivoPdf(null);
-    setDireccionEnvioSeleccionada(null);
-    setDatosOrdenCompletos(null);
-    setErrorProcesamiento(null);
-    setProductosEditables([]);
-    setTotalesCalculados({ subTotal: 0, iva: 0, total: 0 });
   };
 
   // Crear orden directamente desde PDF (sin modal intermedio)
@@ -700,7 +796,7 @@ const OrdenCompraForm: React.FC<OrdenCompraFormProps> = ({ show, onHide, editId,
       
       // Cerrar modal y resetear formulario
       onHide();
-      resetFormulario();
+      resetearFormulario();
       
     } catch (error) {
       console.error('Error al crear orden desde PDF:', error);
@@ -708,6 +804,13 @@ const OrdenCompraForm: React.FC<OrdenCompraFormProps> = ({ show, onHide, editId,
     } finally {
       setProcesando(false);
     }
+  };
+
+  // Función para cancelar y cerrar el modal de resultados
+  const cancelarProcesamiento = () => {
+    setMostrarModalResultados(false);
+    resetearFormulario();
+    onHide();
   };
 
   return (
@@ -1139,6 +1242,8 @@ const OrdenCompraForm: React.FC<OrdenCompraFormProps> = ({ show, onHide, editId,
         onAgregarProducto={agregarNuevoProducto}
         onVolverAlFormulario={volverAlFormulario}
         onGenerarOrden={generarOrdenCompra}
+        editId={editId}
+        onCancelar={cancelarProcesamiento}
       />
     </>
   );
