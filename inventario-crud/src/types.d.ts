@@ -122,3 +122,14 @@ export interface OrdenCompra {
   createdAt?: string;
   updatedAt?: string;
 }
+
+export interface MaterialElectrico {
+  _id?: string;
+  tipo: string;
+  material: string;
+  medida: string;
+  unidad: "PZA" | "MTS";
+  proveedor: string;
+  precio: number;
+  fechaActualizacion: Date | string;
+}

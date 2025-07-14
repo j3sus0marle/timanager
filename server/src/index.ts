@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 
 import itemRoutes from "./routes/itemRoutes";
 import vendedoresRoutes from './routes/vendedores'
+import materialElectricoRoutes from './routes/materialElectrico'
 import inventoryRoutes from "./routes/inventoryRoutes";
 import inventoryMovementsRoutes from "./routes/inventoryMovementsRoutes";
 import inventoryExteriorRoutes from "./routes/inventoryExteriorRoutes";
@@ -40,6 +41,7 @@ app.use("/api/proveedores", proveedoresRoutes);
 app.use("/api/razones-sociales", razonesSocialesRoutes);
 app.use("/api/guias", guiasRoutes);
 app.use("/api/ordenes-compra", ordenesCompraRoutes);
+app.use("/api/material-electrico", materialElectricoRoutes);
 app.use("/api/notification-config", notificationConfigRoutes);
 app.use('/api/auth', authRoutes);
 

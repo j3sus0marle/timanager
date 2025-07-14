@@ -213,7 +213,6 @@ const ModalResultados: React.FC<ModalResultadosProps> = React.memo(({
   productosEditables,
   totalesCalculados,
   onActualizarProducto,
-  onAgregarProducto,
   onVolverAlFormulario,
   onGenerarOrden,
   editId,

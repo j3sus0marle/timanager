@@ -1,13 +1,13 @@
-// src/pages/Productos.tsx
-import ItemList from "../components/items/ItemList";
+// src/pages/Mat-elec.tsx
+import MaterialElectricoList from "../components/materialElectrico/MaterialElectricoList";
 
-const Productos: React.FC = () => {
+const MaterialElectrico: React.FC = () => {
   return (
     <div>
-      <h2>Material Electrico</h2>
-      <ItemList />
+      <h2>Material Eléctrico</h2>
+      <MaterialElectricoList />
     </div>
   );
 };
 
-export default Productos;
+export default MaterialElectrico;
