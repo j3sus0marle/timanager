@@ -12,5 +12,12 @@ export default defineConfig({
       clientPort: 80, // Evita problemas con WebSocket en Vite HMR
     },
     allowedHosts: ['www.timanager.com', 'localhost'], // Permite estos dominios
+    proxy: {
+      '/api': {
+        target: 'http://localhost:6051',
+        changeOrigin: true,
+        secure: false,
+      }
+    }
   },
 })

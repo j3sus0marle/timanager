@@ -5,7 +5,7 @@ import MainLayout from "./layout/MainLayout";
 import Dashboard from "./pages/Dashboard";
 import Proyectos from "./pages/Proyectos";
 import Cotizaciones from "./pages/Cotizaciones";
-import CotizacionesElectricas from "./pages/CotizacionesElectricas";
+import CotizacionesCanalizacion from "./pages/CotizacionesCanalizacion";
 import OrdenesCompra from "./pages/OrdenesCompra";
 import Clientes from "./pages/Clientes";
 import Proveedores from "./pages/Proveedores";
@@ -181,7 +181,7 @@ function App() {
           <Route path="proyectos" element={<Proyectos />} />
           <Route path="ordenes-compra" element={<OrdenesCompra />} />
           <Route path="cotizaciones" element={<Cotizaciones />} />
-          <Route path="cotizaciones-electricas" element={<CotizacionesElectricas />} />
+          <Route path="cotizaciones-canalizacion" element={<CotizacionesCanalizacion />} />
           <Route path="clientes" element={<Clientes />} />
           <Route path="proveedores" element={<Proveedores />} />
           <Route path="razones-sociales" element={<RazonesSociales />} />

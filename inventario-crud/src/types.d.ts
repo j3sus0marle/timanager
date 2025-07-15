@@ -133,3 +133,29 @@ export interface MaterialCanalizacion {
   precio: number;
   fechaActualizacion: Date | string;
 }
+
+export interface CotizacionCanalizacion {
+  _id?: string;
+  numeroPresupuesto: string;
+  cliente: string | Cliente;
+  fecha: Date | string;
+  vigencia: Date | string;
+  subtotal: number;
+  utilidad: number; // Porcentaje de utilidad
+  total: number;
+  estado: "Borrador" | "Enviada" | "Aceptada" | "Rechazada" | "Vencida";
+  items: ItemCotizacionCanalizacion[];
+  comentarios?: string;
+  fechaCreacion: Date | string;
+  fechaActualizacion: Date | string;
+}
+
+export interface ItemCotizacionCanalizacion {
+  _id?: string;
+  materialCanalizacion?: string | MaterialCanalizacion; // Referencia al material (opcional)
+  descripcion: string;
+  cantidad: number;
+  unidad: "PZA" | "MTS";
+  precioUnitario: number;
+  subtotal: number;
+}

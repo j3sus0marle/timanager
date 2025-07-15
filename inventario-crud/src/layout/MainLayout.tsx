@@ -65,7 +65,7 @@ const MainLayout: React.FC<{ username?: string | null, onLogout?: () => void }> 
         { path: "/proyectos", label: "Control de Proyectos", icon: <FaProjectDiagram size={14} /> },
         { path: "/ordenes-compra", label: "Órdenes de Compra", icon: <FaShoppingCart size={14} /> },
         { path: "/cotizaciones", label: "Cotizaciones", icon: <FaFileInvoiceDollar size={14} /> },
-        { path: "/cotizaciones-electricas", label: "Presupuesto Eléctrico", icon: <FaFileInvoiceDollar size={14} /> },
+        { path: "/cotizaciones-canalizacion", label: "Cotizaciones de Canalización", icon: <FaFileInvoiceDollar size={14} /> },
       ],
     },
     {
