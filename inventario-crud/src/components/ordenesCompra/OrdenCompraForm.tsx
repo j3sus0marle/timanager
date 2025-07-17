@@ -12,6 +12,7 @@ import {
 import { Proveedor, RazonSocial, Vendedor } from "../../types";
 import axios from "axios";
 import ModalResultados from "./ModalResultados";
+import { DateUtils } from "../../utils/dateUtils";
 
 interface OrdenCompraFormProps {
   show: boolean;
@@ -24,7 +25,7 @@ interface OrdenCompraFormProps {
 const OrdenCompraForm: React.FC<OrdenCompraFormProps> = ({ show, onHide, editId, onOrdenCreada }) => {
   // Estados del formulario
   const [numeroOrden, setNumeroOrden] = useState("");
-  const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
+  const [fecha, setFecha] = useState(DateUtils.getTodayForInput());
   
   // Estados para proveedor
   const [proveedorBusqueda, setProveedorBusqueda] = useState("");
@@ -227,7 +228,7 @@ const OrdenCompraForm: React.FC<OrdenCompraFormProps> = ({ show, onHide, editId,
           
           // Cargar datos básicos
           setNumeroOrden(orden.numeroOrden || '');
-          setFecha(orden.fecha ? new Date(orden.fecha).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
+          setFecha(orden.fecha ? DateUtils.dateToInputFormat(orden.fecha) : DateUtils.getTodayForInput());
           
           // Cargar proveedor
           if (typeof orden.proveedor === 'object') {
@@ -299,7 +300,7 @@ const OrdenCompraForm: React.FC<OrdenCompraFormProps> = ({ show, onHide, editId,
   // Función para resetear el formulario
   const resetearFormulario = () => {
     setNumeroOrden('');
-    setFecha(new Date().toISOString().split('T')[0]);
+    setFecha(DateUtils.getTodayForInput());
     setProveedorBusqueda('');
     setProveedorSeleccionado(null);
     setRazonSocialBusqueda('');

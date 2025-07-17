@@ -1,6 +1,7 @@
 import puppeteer from 'puppeteer';
 import * as fs from 'fs';
 import * as path from 'path';
+import { DateUtils } from '../utils/dateUtils';
 
 interface OrdenCompraData {
   numeroOrden: string;
@@ -111,7 +112,7 @@ export class PdfGeneratorService {
     const plantillaVars = {
       // Información del documento
       noDocVal: datosOrden.numeroOrden || '',
-      fechaDoc: datosOrden.fecha || new Date().toLocaleDateString('es-MX'),
+      fechaDoc: datosOrden.fecha || DateUtils.formatForOrdenCompra(),
       numCotizacion: datosPdf.folio || '',
       
       // Información del proveedor

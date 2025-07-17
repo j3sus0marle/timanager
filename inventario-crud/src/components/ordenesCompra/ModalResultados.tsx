@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { Modal, Form, Button, Row, Col, Alert, Badge, Spinner } from "react-bootstrap";
+import { DateUtils } from "../../utils/dateUtils";
 
 interface ModalResultadosProps {
   show: boolean;
@@ -222,6 +223,8 @@ const ModalResultados: React.FC<ModalResultadosProps> = React.memo(({
   const [monedaSeleccionada, setMonedaSeleccionada] = useState<string>('MXN');
   // Estado para el porcentaje de IVA simbólico seleccionado
   const [porcentajeIvaSimbolico, setPorcentajeIvaSimbolico] = useState<string>('16');
+  // Estado para la fecha editable
+  const [fechaEditable, setFechaEditable] = useState<string>(DateUtils.getTodayForInput());
   // Estado para controlar el loading del botón de generar orden
   const [generandoOrden, setGenerandoOrden] = useState<boolean>(false);
 
@@ -236,6 +239,15 @@ const ModalResultados: React.FC<ModalResultadosProps> = React.memo(({
     }
   }, [totalesCalculados]);
 
+  // Inicializar la fecha editable cuando se cargan los datos
+  React.useEffect(() => {
+    if (datosOrdenCompletos?.fecha) {
+      setFechaEditable(DateUtils.dateToInputFormat(datosOrdenCompletos.fecha));
+    } else {
+      setFechaEditable(DateUtils.getTodayForInput());
+    }
+  }, [datosOrdenCompletos]);
+
   const handleGenerarOrden = async () => {
     if (!onGenerarOrden || productosEditables.length === 0) return;
     
@@ -245,7 +257,7 @@ const ModalResultados: React.FC<ModalResultadosProps> = React.memo(({
       // Preparar los datos de la orden para enviar al backend
       const datosParaEnviar = {
         numeroOrden: datosOrdenCompletos?.numeroOrden || '',
-        fecha: datosOrdenCompletos?.fecha || new Date().toISOString(),
+        fecha: DateUtils.formatForBackend(fechaEditable),
         proveedor: datosOrdenCompletos?.proveedor?.id || datosOrdenCompletos?.proveedor?._id,
         razonSocial: datosOrdenCompletos?.razonSocial?.id || datosOrdenCompletos?.razonSocial?._id,
         vendedor: datosOrdenCompletos?.vendedor?.id || datosOrdenCompletos?.vendedor?._id,
@@ -327,7 +339,23 @@ const ModalResultados: React.FC<ModalResultadosProps> = React.memo(({
               </Row>
               
               <Row>
-                <Col md={6}>
+                <Col md={4}>
+                  <Form.Group className="mb-3">
+                    <Form.Label className="small fw-bold mb-1">Fecha de la Orden:</Form.Label>
+                    <Form.Control
+                      type="date"
+                      size="sm"
+                      value={fechaEditable}
+                      onChange={(e) => setFechaEditable(e.target.value)}
+                      className="border-info"
+                    />
+                    <Form.Text className="text-muted">
+                      <small><i className="fas fa-calendar me-1"></i>Fecha que aparecerá en la orden de compra</small>
+                    </Form.Text>
+                  </Form.Group>
+                </Col>
+                
+                <Col md={4}>
                   <Form.Group className="mb-3">
                     <Form.Label className="small fw-bold mb-1">Tipo de Moneda:</Form.Label>
                     <Form.Select
@@ -346,7 +374,7 @@ const ModalResultados: React.FC<ModalResultadosProps> = React.memo(({
                   </Form.Group>
                 </Col>
                 
-                <Col md={6}>
+                <Col md={4}>
                   <Form.Group className="mb-3">
                     <Form.Label className="small fw-bold mb-1">Porcentaje de IVA (Simbólico):</Form.Label>
                     <Form.Select

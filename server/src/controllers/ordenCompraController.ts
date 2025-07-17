@@ -8,6 +8,7 @@ import Proveedor from '../models/Proveedor';
 import RazonSocial from '../models/RazonSocial';
 import Vendedor from '../models/Vendedor';
 import { PdfGeneratorService } from '../services/pdfGenerator';
+import { DateUtils } from '../utils/dateUtils';
 
 const execFileAsync = promisify(execFile);
 const pdfGenerator = new PdfGeneratorService();
@@ -84,7 +85,7 @@ export const createOrdenCompra = async (req: Request, res: Response) => {
     
     const ordenCompra = new OrdenCompra({
       numeroOrden,
-      fecha: fecha ? new Date(fecha) : new Date(),
+      fecha: fecha ? DateUtils.parseToMexicaliDate(fecha) : DateUtils.getCurrentDateInMexicali(),
       proveedor,
       razonSocial,
       vendedor: vendedor || undefined,
@@ -140,7 +141,7 @@ export const updateOrdenCompra = async (req: Request, res: Response) => {
     
     const updateData: any = {};
     if (numeroOrden) updateData.numeroOrden = numeroOrden;
-    if (fecha) updateData.fecha = new Date(fecha);
+    if (fecha) updateData.fecha = DateUtils.parseToMexicaliDate(fecha);
     if (proveedor) updateData.proveedor = proveedor;
     if (razonSocial) updateData.razonSocial = razonSocial;
     if (vendedor !== undefined) updateData.vendedor = vendedor || null;
@@ -216,8 +217,8 @@ export const getOrdenesByDateRange = async (req: Request, res: Response) => {
     const filtro: any = {};
     if (fechaInicio && fechaFin) {
       filtro.fecha = {
-        $gte: new Date(fechaInicio as string),
-        $lte: new Date(fechaFin as string)
+        $gte: DateUtils.getStartOfDay(DateUtils.parseToMexicaliDate(fechaInicio as string)),
+        $lte: DateUtils.getEndOfDay(DateUtils.parseToMexicaliDate(fechaFin as string))
       };
     }
     
@@ -383,7 +384,7 @@ export const generarPdfOrdenCompra = async (req: Request, res: Response) => {
 
     // Generar número de orden si no existe
     if (!datosOrden.numeroOrden) {
-      const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      const timestamp = DateUtils.formatDateForInput().replace(/-/g, '');
       const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
       datosOrden.numeroOrden = `OC-${timestamp}-${random}`;
     }
@@ -455,7 +456,7 @@ export const crearOrdenCompraConPdf = async (req: Request, res: Response) => {
     // Generar número de orden si no se proporciona
     let numeroOrdenFinal = numeroOrden;
     if (!numeroOrdenFinal) {
-      const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      const timestamp = DateUtils.formatDateForInput().replace(/-/g, '');
       const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
       numeroOrdenFinal = `OC-${timestamp}-${random}`;
     }
@@ -464,7 +465,7 @@ export const crearOrdenCompraConPdf = async (req: Request, res: Response) => {
     const ordenCompra = new OrdenCompra({
       numeroOrden: numeroOrdenFinal,
       numeroCotizacion: datosPdf?.datosExtraidos?.folio || undefined, // Extraer número de cotización del PDF
-      fecha: fecha ? new Date(fecha) : new Date(),
+      fecha: fecha ? DateUtils.parseToMexicaliDate(fecha) : DateUtils.getCurrentDateInMexicali(),
       proveedor,
       razonSocial,
       vendedor: vendedor || undefined,
@@ -483,7 +484,7 @@ export const crearOrdenCompraConPdf = async (req: Request, res: Response) => {
     // Preparar datos para generar PDF
     const datosParaPdf = {
       numeroOrden: numeroOrdenFinal,
-      fecha: fecha ? new Date(fecha).toLocaleDateString('es-MX') : new Date().toLocaleDateString('es-MX'),
+      fecha: fecha ? DateUtils.formatForOrdenCompra(fecha) : DateUtils.formatForOrdenCompra(),
       proveedor: proveedorData.toObject(),
       razonSocial: razonSocialData.toObject(),
       vendedor: vendedorData ? vendedorData.toObject() : undefined,
@@ -592,7 +593,7 @@ export const updateOrdenCompraConPdf = async (req: Request, res: Response) => {
     const updateData = {
       numeroOrden: numeroOrden || ordenExistente.numeroOrden,
       numeroCotizacion: datosPdf?.datosExtraidos?.folio || ordenExistente.numeroCotizacion,
-      fecha: fecha ? new Date(fecha) : ordenExistente.fecha,
+      fecha: fecha ? DateUtils.parseToMexicaliDate(fecha) : ordenExistente.fecha,
       proveedor,
       razonSocial,
       vendedor: vendedor || undefined,
@@ -618,7 +619,7 @@ export const updateOrdenCompraConPdf = async (req: Request, res: Response) => {
     // Preparar datos para generar PDF
     const datosParaPdf = {
       numeroOrden: ordenActualizada.numeroOrden,
-      fecha: new Date(ordenActualizada.fecha).toLocaleDateString('es-MX'),
+      fecha: DateUtils.formatForOrdenCompra(ordenActualizada.fecha),
       proveedor: proveedorData.toObject(),
       razonSocial: razonSocialData.toObject(),
       vendedor: vendedorData ? vendedorData.toObject() : undefined,
@@ -856,7 +857,7 @@ export const crearOrdenDesdePdf = async (req: Request, res: Response) => {
       }
 
       // Generar número de orden único
-      const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      const timestamp = DateUtils.formatDateForInput().replace(/-/g, '');
       const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
       const numeroOrden = `OC-${proveedorData.empresa.substring(0, 3).toUpperCase()}-${timestamp}-${random}`;
 
@@ -864,7 +865,7 @@ export const crearOrdenDesdePdf = async (req: Request, res: Response) => {
       const ordenCompra = new OrdenCompra({
         numeroOrden,
         numeroCotizacion: datosExtraidos?.folio || undefined, // Extraer número de cotización del PDF
-        fecha: new Date(),
+        fecha: DateUtils.getCurrentDateInMexicali(),
         proveedor: proveedorId,
         razonSocial: razonSocialId,
         vendedor: vendedorId || undefined,
@@ -884,7 +885,7 @@ export const crearOrdenDesdePdf = async (req: Request, res: Response) => {
       // Preparar datos para generar PDF de orden de compra
       const datosParaPdf = {
         numeroOrden,
-        fecha: new Date().toLocaleDateString('es-MX'),
+        fecha: DateUtils.formatForOrdenCompra(),
         proveedor: proveedorData.toObject(),
         razonSocial: razonSocialData.toObject(),
         vendedor: vendedorData ? vendedorData.toObject() : undefined,
