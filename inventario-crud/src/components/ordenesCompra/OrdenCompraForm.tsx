@@ -9,10 +9,9 @@ import {
   ListGroup,
   Badge
 } from "react-bootstrap";
-import { Proveedor, RazonSocial, Vendedor } from "../../types";
+import { Proveedor, RazonSocial } from "../../types";
 import axios from "axios";
 import ModalResultados from "./ModalResultados";
-import { DateUtils } from "../../utils/dateUtils";
 
 interface OrdenCompraFormProps {
   show: boolean;
@@ -25,7 +24,6 @@ interface OrdenCompraFormProps {
 const OrdenCompraForm: React.FC<OrdenCompraFormProps> = ({ show, onHide, editId, onOrdenCreada }) => {
   // Estados del formulario
   const [numeroOrden, setNumeroOrden] = useState("");
-  const [fecha, setFecha] = useState(DateUtils.getTodayForInput());
   
   // Estados para proveedor
   const [proveedorBusqueda, setProveedorBusqueda] = useState("");
@@ -38,12 +36,6 @@ const OrdenCompraForm: React.FC<OrdenCompraFormProps> = ({ show, onHide, editId,
   const [razonSocialSeleccionada, setRazonSocialSeleccionada] = useState<RazonSocial | null>(null);
   const [razonesSocialesSugerencias, setRazonesSocialesSugerencias] = useState<RazonSocial[]>([]);
   const [mostrarSugerenciasRazonSocial, setMostrarSugerenciasRazonSocial] = useState(false);
-  
-  // Estados para vendedor
-  const [vendedorBusqueda, setVendedorBusqueda] = useState("");
-  const [vendedorSeleccionado, setVendedorSeleccionado] = useState<Vendedor | null>(null);
-  const [vendedoresSugerencias, setVendedoresSugerencias] = useState<Vendedor[]>([]);
-  const [mostrarSugerenciasVendedor, setMostrarSugerenciasVendedor] = useState(false);
   
   // Estado para archivo PDF
   const [archivoPdf, setArchivoPdf] = useState<File | null>(null);
@@ -179,26 +171,6 @@ const OrdenCompraForm: React.FC<OrdenCompraFormProps> = ({ show, onHide, editId,
     }
   };
 
-  // Cargar vendedores
-  const buscarVendedores = async (termino: string) => {
-    if (termino.length < 2) {
-      setVendedoresSugerencias([]);
-      return;
-    }
-    
-    try {
-      const response = await axios.get<Vendedor[]>(`${urlServer}vendedores/`);
-      const filtered = response.data.filter(vendedor =>
-        vendedor.nombre.toLowerCase().includes(termino.toLowerCase()) ||
-        vendedor.correo.toLowerCase().includes(termino.toLowerCase())
-      );
-      setVendedoresSugerencias(filtered.slice(0, 5));
-    } catch (error) {
-      console.error("Error al buscar vendedores:", error);
-      setVendedoresSugerencias([]);
-    }
-  };
-
   // Efectos para búsqueda
   useEffect(() => {
     if (proveedorBusqueda) {
@@ -212,12 +184,6 @@ const OrdenCompraForm: React.FC<OrdenCompraFormProps> = ({ show, onHide, editId,
     }
   }, [razonSocialBusqueda]);
 
-  useEffect(() => {
-    if (vendedorBusqueda) {
-      buscarVendedores(vendedorBusqueda);
-    }
-  }, [vendedorBusqueda]);
-
   // Efecto para cargar datos cuando se edita una orden
   useEffect(() => {
     const cargarDatosOrden = async () => {
@@ -228,7 +194,6 @@ const OrdenCompraForm: React.FC<OrdenCompraFormProps> = ({ show, onHide, editId,
           
           // Cargar datos básicos
           setNumeroOrden(orden.numeroOrden || '');
-          setFecha(orden.fecha ? DateUtils.dateToInputFormat(orden.fecha) : DateUtils.getTodayForInput());
           
           // Cargar proveedor
           if (typeof orden.proveedor === 'object') {
@@ -250,12 +215,6 @@ const OrdenCompraForm: React.FC<OrdenCompraFormProps> = ({ show, onHide, editId,
               }
               setDireccionEnvioSeleccionada(indiceSeleccionado);
             }
-          }
-          
-          // Cargar vendedor
-          if (typeof orden.vendedor === 'object') {
-            setVendedorSeleccionado(orden.vendedor);
-            setVendedorBusqueda(orden.vendedor.nombre || '');
           }
           
           // Si hay productos en datosOrden, cargarlos y mostrar modal de resultados
@@ -300,13 +259,11 @@ const OrdenCompraForm: React.FC<OrdenCompraFormProps> = ({ show, onHide, editId,
   // Función para resetear el formulario
   const resetearFormulario = () => {
     setNumeroOrden('');
-    setFecha(DateUtils.getTodayForInput());
+    // No establecer fecha por defecto
     setProveedorBusqueda('');
     setProveedorSeleccionado(null);
     setRazonSocialBusqueda('');
     setRazonSocialSeleccionada(null);
-    setVendedorBusqueda('');
-    setVendedorSeleccionado(null);
     setArchivoPdf(null);
     setDireccionEnvioSeleccionada(null);
     setProductosEditables([]);
@@ -381,7 +338,13 @@ const OrdenCompraForm: React.FC<OrdenCompraFormProps> = ({ show, onHide, editId,
     setRazonSocialBusqueda(razonSocial.nombre);
     setMostrarSugerenciasRazonSocial(false);
     setRazonesSocialesSugerencias([]);
-    setDireccionEnvioSeleccionada(null);
+    
+    // Seleccionar automáticamente la primera dirección de envío si existe
+    if (razonSocial.direccionEnvio && razonSocial.direccionEnvio.length > 0) {
+      setDireccionEnvioSeleccionada(0);
+    } else {
+      setDireccionEnvioSeleccionada(null);
+    }
     
     if (proveedorSeleccionado) {
       try {
@@ -404,34 +367,6 @@ const OrdenCompraForm: React.FC<OrdenCompraFormProps> = ({ show, onHide, editId,
     }
   };
 
-  // Manejar cambio en búsqueda de vendedor
-  const handleVendedorBusquedaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const valor = e.target.value;
-    setVendedorBusqueda(valor);
-    setMostrarSugerenciasVendedor(true);
-    
-    if (!valor) {
-      setVendedorSeleccionado(null);
-      setVendedoresSugerencias([]);
-    }
-  };
-
-  // Manejar selección de vendedor
-  const handleVendedorSeleccion = (vendedor: Vendedor) => {
-    setVendedorSeleccionado(vendedor);
-    setVendedorBusqueda(vendedor.nombre);
-    setMostrarSugerenciasVendedor(false);
-    setVendedoresSugerencias([]);
-  };
-
-  // Manejar Enter en vendedor
-  const handleVendedorKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && vendedoresSugerencias.length > 0) {
-      e.preventDefault();
-      handleVendedorSeleccion(vendedoresSugerencias[0]);
-    }
-  };
-
   // Manejar cambio de archivo PDF
   const handlePdfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -441,11 +376,6 @@ const OrdenCompraForm: React.FC<OrdenCompraFormProps> = ({ show, onHide, editId,
       alert('Por favor seleccione un archivo PDF válido');
       e.target.value = '';
     }
-  };
-
-  // Manejar selección de dirección de envío
-  const handleDireccionEnvioSeleccion = (index: number) => {
-    setDireccionEnvioSeleccionada(direccionEnvioSeleccionada === index ? null : index);
   };
 
   // Procesar orden completa
@@ -478,7 +408,6 @@ const OrdenCompraForm: React.FC<OrdenCompraFormProps> = ({ show, onHide, editId,
       // Preparar datos básicos de la orden
       const datosBasicos = {
         numeroOrden,
-        fecha,
         proveedor: {
           id: proveedorSeleccionado._id,
           empresa: proveedorSeleccionado.empresa,
@@ -495,12 +424,7 @@ const OrdenCompraForm: React.FC<OrdenCompraFormProps> = ({ show, onHide, editId,
           direccionEmpresa: razonSocialSeleccionada.direccionEmpresa,
           emailFacturacion: razonSocialSeleccionada.emailFacturacion
         },
-        vendedor: vendedorSeleccionado ? {
-          id: vendedorSeleccionado._id,
-          nombre: vendedorSeleccionado.nombre,
-          correo: vendedorSeleccionado.correo,
-          telefono: vendedorSeleccionado.telefono
-        } : null,
+        vendedor: null, // Se seleccionará en el modal de resultados
         direccionEnvio: direccionEnvioSeleccionada !== null ? {
           indice: direccionEnvioSeleccionada,
           ...razonSocialSeleccionada.direccionEnvio[direccionEnvioSeleccionada]
@@ -600,12 +524,13 @@ const OrdenCompraForm: React.FC<OrdenCompraFormProps> = ({ show, onHide, editId,
     if (datosPdf && datosPdf.datosExtraidos && datosPdf.datosExtraidos.productos) {
       const productos = datosPdf.datosExtraidos.productos.map((producto: any) => ({
         cantidad: Number(producto.cantidad) || 0,
-        clave: producto.codigo || '',
+        clave: producto.codigo || producto.codigoFabricante || '',
         descripcion: producto.descripcion || '',
-        precioUnitario: Number(producto.precioUnitario) || 0,
+        precioUnitario: Number(producto.precioUnitario) || Number(producto.precioLista) || 0,
         unidad: producto.unidad || '',
         almacen: producto.alm || '',
-        precioLista: Number(producto.precioLista) || 0
+        precioLista: Number(producto.precioLista) || 0,
+        descuento: Number(producto.descuento) || 0
       }));
       
       setProductosEditables(productos);
@@ -784,7 +709,7 @@ const OrdenCompraForm: React.FC<OrdenCompraFormProps> = ({ show, onHide, editId,
         archivoPdf,
         proveedorSeleccionado._id ?? "",
         razonSocialSeleccionada._id ?? "",
-        vendedorSeleccionado?._id ?? undefined
+        undefined // El vendedor se seleccionará en el modal de resultados
       );
 
       // Mostrar mensaje de éxito
@@ -825,7 +750,7 @@ const OrdenCompraForm: React.FC<OrdenCompraFormProps> = ({ show, onHide, editId,
           <Form>
             {/* Información básica */}
             <Row className="mb-3">
-              <Col md={6}>
+              <Col md={12}>
                 <Form.Group className="mb-3">
                   <Form.Label>
                     Número de Orden *
@@ -879,17 +804,6 @@ const OrdenCompraForm: React.FC<OrdenCompraFormProps> = ({ show, onHide, editId,
                       </>
                     )}
                   </div>
-                </Form.Group>
-              </Col>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Fecha *</Form.Label>
-                  <Form.Control
-                    type="date"
-                    value={fecha}
-                    onChange={(e) => setFecha(e.target.value)}
-                    required
-                  />
                 </Form.Group>
               </Col>
             </Row>
@@ -1008,7 +922,7 @@ const OrdenCompraForm: React.FC<OrdenCompraFormProps> = ({ show, onHide, editId,
                         <>
                           <br />
                           <strong>Dirección de Envío:</strong> {razonSocialSeleccionada.direccionEnvio[direccionEnvioSeleccionada].nombre}
-                          <Badge bg="info" className="ms-2 small">Seleccionada</Badge>
+                          <Badge bg="info" className="ms-2 small">Seleccionada por defecto</Badge>
                         </>
                       )}
                     </Alert>
@@ -1016,146 +930,6 @@ const OrdenCompraForm: React.FC<OrdenCompraFormProps> = ({ show, onHide, editId,
                 </div>
               </Col>
             </Row>
-
-            {/* Sección de Vendedor */}
-            <Row className="mb-4">
-              <Col>
-                <div className="h-100 p-3" style={{ backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #dee2e6' }}>
-                  <h6 className="text-primary mb-3">Seleccionar Vendedor</h6>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Buscar Vendedor *</Form.Label>
-                    <Form.Control
-                      type="text"
-                      value={vendedorBusqueda}
-                      onChange={handleVendedorBusquedaChange}
-                      onKeyDown={handleVendedorKeyDown}
-                      placeholder="Escriba el nombre del vendedor"
-                      required
-                    />
-                    {mostrarSugerenciasVendedor && vendedoresSugerencias.length > 0 && (
-                      <ListGroup className="mt-2" style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                        {vendedoresSugerencias.map((vendedor) => (
-                          <ListGroup.Item
-                            key={vendedor._id}
-                            action
-                            onClick={() => handleVendedorSeleccion(vendedor)}
-                            style={{ cursor: 'pointer' }}
-                          >
-                            <strong>{vendedor.nombre}</strong>
-                            <br />
-                            <small className="text-muted">
-                              {vendedor.correo} - {vendedor.telefono}
-                            </small>
-                          </ListGroup.Item>
-                        ))}
-                      </ListGroup>
-                    )}
-                  </Form.Group>
-
-                  {vendedorSeleccionado && (
-                    <Alert variant="success" className="mb-0 small">
-                      <strong>Vendedor Seleccionado:</strong>
-                      <br />
-                      <strong>Nombre:</strong> {vendedorSeleccionado.nombre}
-                      <br />
-                      <strong>Email:</strong> {vendedorSeleccionado.correo}
-                      <br />
-                      <strong>Teléfono:</strong> {vendedorSeleccionado.telefono}
-                    </Alert>
-                  )}
-                </div>
-              </Col>
-            </Row>
-
-            {/* Sección de Direcciones de Envío */}
-            {razonSocialSeleccionada && razonSocialSeleccionada.direccionEnvio && razonSocialSeleccionada.direccionEnvio.length > 0 && (
-              <Row className="mb-4">
-                <Col>
-                  <div className="p-3" style={{ backgroundColor: '#f0f8ff', borderRadius: '8px', border: '1px solid #b3d9ff' }}>
-                    <h6 className="text-info mb-3">
-                      <i className="fas fa-map-marker-alt me-2"></i>
-                      Direcciones de Envío Disponibles
-                      {direccionEnvioSeleccionada !== null && (
-                        <Badge bg="success" className="ms-2">
-                          1 seleccionada
-                        </Badge>
-                      )}
-                    </h6>
-                    <Row>
-                      {razonSocialSeleccionada.direccionEnvio.map((direccion, index) => (
-                        <Col md={6} lg={4} key={index} className="mb-3">
-                          <div 
-                            className={`card h-100 ${direccionEnvioSeleccionada === index ? 'border-success' : ''}`}
-                            style={{ 
-                              border: `2px solid ${direccionEnvioSeleccionada === index ? '#28a745' : '#b3d9ff'}`,
-                              cursor: 'pointer',
-                              transition: 'all 0.2s ease'
-                            }}
-                            onClick={() => handleDireccionEnvioSeleccion(index)}
-                          >
-                            <div className="card-body p-3">
-                              <div className="d-flex justify-content-between align-items-start mb-2">
-                                <h6 className="card-title text-primary mb-0">
-                                  <i className="fas fa-building me-1"></i>
-                                  {direccion.nombre}
-                                </h6>
-                                <Form.Check
-                                  type="checkbox"
-                                  checked={direccionEnvioSeleccionada === index}
-                                  onChange={() => handleDireccionEnvioSeleccion(index)}
-                                  onClick={(e) => e.stopPropagation()}
-                                />
-                              </div>
-                              {direccionEnvioSeleccionada === index && (
-                                <div className="mb-2">
-                                  <Badge bg="success" className="small">
-                                    <i className="fas fa-check me-1"></i>
-                                    Dirección seleccionada
-                                  </Badge>
-                                </div>
-                              )}
-                              <div className="small">
-                                <div className="mb-2">
-                                  <i className="fas fa-map-pin me-1 text-muted"></i>
-                                  <strong>Dirección:</strong>
-                                  <br />
-                                  <span className="ms-3">{direccion.direccion}</span>
-                                </div>
-                                {direccion.telefono && (
-                                  <div className="mb-2">
-                                    <i className="fas fa-phone me-1 text-muted"></i>
-                                    <strong>Teléfono:</strong> {direccion.telefono}
-                                  </div>
-                                )}
-                                {direccion.contacto && (
-                                  <div className="mb-0">
-                                    <i className="fas fa-user me-1 text-muted"></i>
-                                    <strong>Contacto:</strong> {direccion.contacto}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </Col>
-                      ))}
-                    </Row>
-                    <div className="mt-2">
-                      <small className="text-muted">
-                        <i className="fas fa-info-circle me-1"></i>
-                        Haz clic en una tarjeta o checkbox para seleccionar la dirección de envío para esta orden.
-                        {direccionEnvioSeleccionada !== null && (
-                          <><br />
-                          <span className="text-success">
-                            <i className="fas fa-check-circle me-1"></i>
-                            Dirección "{razonSocialSeleccionada.direccionEnvio[direccionEnvioSeleccionada].nombre}" seleccionada.
-                          </span></>
-                        )}
-                      </small>
-                    </div>
-                  </div>
-                </Col>
-              </Row>
-            )}
 
             {/* Sección de carga de PDF */}
             <div className="mb-4 p-3" style={{ backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #dee2e6' }}>

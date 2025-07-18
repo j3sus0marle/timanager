@@ -143,7 +143,7 @@ export const updateOrdenCompra = async (req: Request, res: Response) => {
     if (numeroOrden) updateData.numeroOrden = numeroOrden;
     if (fecha) updateData.fecha = DateUtils.parseToMexicaliDate(fecha);
     if (proveedor) updateData.proveedor = proveedor;
-    if (razonSocial) updateData.razonSocial = razonSocial;
+    if (razonSocial) updateData.razonSocial = razonSocial; // Permitir actualización de razón social
     if (vendedor !== undefined) updateData.vendedor = vendedor || null;
     if (datosOrden) updateData.datosOrden = datosOrden;
     
@@ -342,10 +342,9 @@ async function getScriptPath(proveedorInfo: string): Promise<string | null> {
   // Mapeo de proveedores a scripts (incluyendo variaciones del nombre)
   const scriptMap: { [key: string]: string } = {
     'syscom': 'extraer_datos_syscom.py',
-    'portentum': 'extraer_datos_portentum.py',
-    'portenntum': 'extraer_datos_portentum.py', // Variación con doble N
-    'cti': 'extraer_datos_cti.py',
-    'nextiraone': 'extraer_datos_nextiraone.py',
+    'portenntum': 'script_auto_portenntum.py',
+    'tvc': 'extraer_datos_tvc.py',
+    'grupo dice': 'extraer_datos_grupo_dice.py',
   };
 
   // Buscar coincidencia exacta primero

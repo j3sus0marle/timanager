@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from "react";
-import { Modal, Form, Button, Row, Col, Alert, Badge, Spinner } from "react-bootstrap";
+import { Modal, Form, Button, Row, Col, Alert, Badge, Spinner, ListGroup } from "react-bootstrap";
 import { DateUtils } from "../../utils/dateUtils";
+import { Vendedor } from "../../types";
+import axios from "axios";
 
 interface ModalResultadosProps {
   show: boolean;
@@ -46,8 +48,10 @@ const FilaProducto = React.memo(({
   moneda: string
 }) => {
   const importe = useMemo(() => {
-    return (Number(producto.cantidad) || 0) * (Number(producto.precioUnitario) || 0);
-  }, [producto.cantidad, producto.precioUnitario]);
+    const subtotal = (Number(producto.cantidad) || 0) * (Number(producto.precioUnitario) || 0);
+    const descuento = (Number(producto.descuento) || 0) / 100;
+    return subtotal * (1 - descuento);
+  }, [producto.cantidad, producto.precioUnitario, producto.descuento]);
 
   const formatearMoneda = (valor: number) => {
     const monedaInfo = MONEDAS[moneda as keyof typeof MONEDAS];
@@ -111,6 +115,19 @@ const FilaProducto = React.memo(({
           min="0"
           step="0.01"
         />
+      </td>
+      <td className="align-middle">
+        <Form.Control
+          type="number"
+          size="sm"
+          value={producto.descuento || ''}
+          onChange={(e) => onActualizar(index, 'descuento', parseFloat(e.target.value) || 0)}
+          placeholder="0"
+          min="0"
+          max="100"
+          step="0.1"
+        />
+        <small className="text-muted">%</small>
       </td>
       <td className="align-middle">
         <div className="fw-bold text-end">
@@ -227,6 +244,72 @@ const ModalResultados: React.FC<ModalResultadosProps> = React.memo(({
   const [fechaEditable, setFechaEditable] = useState<string>(DateUtils.getTodayForInput());
   // Estado para controlar el loading del botón de generar orden
   const [generandoOrden, setGenerandoOrden] = useState<boolean>(false);
+  
+  // Estados para vendedor
+  const [vendedorBusqueda, setVendedorBusqueda] = useState<string>('');
+  const [vendedorSeleccionado, setVendedorSeleccionado] = useState<Vendedor | null>(null);
+  const [vendedoresSugerencias, setVendedoresSugerencias] = useState<Vendedor[]>([]);
+  const [mostrarSugerenciasVendedor, setMostrarSugerenciasVendedor] = useState<boolean>(false);
+  
+  const urlServer = import.meta.env.VITE_API_URL;
+
+  // Función para buscar vendedores
+  const buscarVendedores = async (termino: string) => {
+    if (termino.length < 2) {
+      setVendedoresSugerencias([]);
+      return;
+    }
+    
+    try {
+      const response = await axios.get<Vendedor[]>(`${urlServer}vendedores/`);
+      const filtered = response.data.filter(vendedor =>
+        vendedor.nombre.toLowerCase().includes(termino.toLowerCase()) ||
+        vendedor.correo.toLowerCase().includes(termino.toLowerCase())
+      );
+      setVendedoresSugerencias(filtered.slice(0, 5));
+    } catch (error) {
+      console.error("Error al buscar vendedores:", error);
+      setVendedoresSugerencias([]);
+    }
+  };
+
+  // Manejar cambio en búsqueda de vendedor
+  const handleVendedorBusquedaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const valor = e.target.value;
+    setVendedorBusqueda(valor);
+    setMostrarSugerenciasVendedor(true);
+    
+    if (!valor) {
+      setVendedorSeleccionado(null);
+      setVendedoresSugerencias([]);
+    } else {
+      buscarVendedores(valor);
+    }
+  };
+
+  // Manejar selección de vendedor
+  const handleVendedorSeleccion = (vendedor: Vendedor) => {
+    setVendedorSeleccionado(vendedor);
+    setVendedorBusqueda(vendedor.nombre);
+    setMostrarSugerenciasVendedor(false);
+    setVendedoresSugerencias([]);
+  };
+
+  // Manejar Enter en vendedor
+  const handleVendedorKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && vendedoresSugerencias.length > 0) {
+      e.preventDefault();
+      handleVendedorSeleccion(vendedoresSugerencias[0]);
+    }
+  };
+
+  // Efecto para cargar vendedor existente
+  React.useEffect(() => {
+    if (datosOrdenCompletos?.vendedor) {
+      setVendedorSeleccionado(datosOrdenCompletos.vendedor);
+      setVendedorBusqueda(datosOrdenCompletos.vendedor.nombre || '');
+    }
+  }, [datosOrdenCompletos]);
 
   // Detectar automáticamente el porcentaje de IVA al cargar los datos
   React.useEffect(() => {
@@ -260,7 +343,7 @@ const ModalResultados: React.FC<ModalResultadosProps> = React.memo(({
         fecha: DateUtils.formatForBackend(fechaEditable),
         proveedor: datosOrdenCompletos?.proveedor?.id || datosOrdenCompletos?.proveedor?._id,
         razonSocial: datosOrdenCompletos?.razonSocial?.id || datosOrdenCompletos?.razonSocial?._id,
-        vendedor: datosOrdenCompletos?.vendedor?.id || datosOrdenCompletos?.vendedor?._id,
+        vendedor: vendedorSeleccionado?._id || null,
         direccionEnvio: datosOrdenCompletos?.direccionEnvio,
         productos: productosEditables,
         totalesCalculados: totalesCalculados,
@@ -314,7 +397,8 @@ const ModalResultados: React.FC<ModalResultadosProps> = React.memo(({
                   <div className="small">
                     <strong>Orden:</strong> {datosOrdenCompletos.numeroOrden}<br />
                     <strong>Proveedor:</strong> {datosOrdenCompletos.proveedor?.empresa}<br />
-                    <strong>Razón Social:</strong> {datosOrdenCompletos.razonSocial?.nombre}
+                    <strong>Razón Social:</strong> {datosOrdenCompletos.razonSocial?.nombre}<br />
+                    <strong>Vendedor:</strong> {vendedorSeleccionado?.nombre || 'No asignado'}
                   </div>
                 </Col>
                 <Col md={6}>
@@ -339,7 +423,7 @@ const ModalResultados: React.FC<ModalResultadosProps> = React.memo(({
               </Row>
               
               <Row>
-                <Col md={4}>
+                <Col md={3}>
                   <Form.Group className="mb-3">
                     <Form.Label className="small fw-bold mb-1">Fecha de la Orden:</Form.Label>
                     <Form.Control
@@ -355,7 +439,7 @@ const ModalResultados: React.FC<ModalResultadosProps> = React.memo(({
                   </Form.Group>
                 </Col>
                 
-                <Col md={4}>
+                <Col md={3}>
                   <Form.Group className="mb-3">
                     <Form.Label className="small fw-bold mb-1">Tipo de Moneda:</Form.Label>
                     <Form.Select
@@ -374,7 +458,7 @@ const ModalResultados: React.FC<ModalResultadosProps> = React.memo(({
                   </Form.Group>
                 </Col>
                 
-                <Col md={4}>
+                <Col md={3}>
                   <Form.Group className="mb-3">
                     <Form.Label className="small fw-bold mb-1">Porcentaje de IVA (Simbólico):</Form.Label>
                     <Form.Select
@@ -391,6 +475,57 @@ const ModalResultados: React.FC<ModalResultadosProps> = React.memo(({
                     </Form.Select>
                     <Form.Text className="text-muted">
                       <small><i className="fas fa-info-circle me-1"></i>Solo para mostrar en el PDF. El valor real se toma de la cotización.</small>
+                    </Form.Text>
+                  </Form.Group>
+                </Col>
+                
+                <Col md={3}>
+                  <Form.Group className="mb-3">
+                    <Form.Label className="small fw-bold mb-1">Vendedor:</Form.Label>
+                    <Form.Control
+                      type="text"
+                      size="sm"
+                      value={vendedorBusqueda}
+                      onChange={handleVendedorBusquedaChange}
+                      onKeyDown={handleVendedorKeyDown}
+                      placeholder="Buscar vendedor..."
+                      className="border-info"
+                    />
+                    {mostrarSugerenciasVendedor && vendedoresSugerencias.length > 0 && (
+                      <ListGroup className="mt-2 position-absolute" style={{ 
+                        maxHeight: '200px', 
+                        overflowY: 'auto',
+                        zIndex: 1000,
+                        width: '100%'
+                      }}>
+                        {vendedoresSugerencias.map((vendedor) => (
+                          <ListGroup.Item
+                            key={vendedor._id}
+                            action
+                            onClick={() => handleVendedorSeleccion(vendedor)}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            <div className="small">
+                              <strong>{vendedor.nombre}</strong>
+                              <br />
+                              <span className="text-muted">{vendedor.correo}</span>
+                            </div>
+                          </ListGroup.Item>
+                        ))}
+                      </ListGroup>
+                    )}
+                    <Form.Text className="text-muted">
+                      <small>
+                        <i className="fas fa-user me-1"></i>
+                        {vendedorSeleccionado ? (
+                          <span className="text-success">
+                            <i className="fas fa-check me-1"></i>
+                            {vendedorSeleccionado.nombre} seleccionado
+                          </span>
+                        ) : (
+                          'Opcional - Escriba para buscar'
+                        )}
+                      </small>
                     </Form.Text>
                   </Form.Group>
                 </Col>
@@ -411,11 +546,12 @@ const ModalResultados: React.FC<ModalResultadosProps> = React.memo(({
                       <tr>
                         <th style={{ width: '5%' }}>#</th>
                         <th style={{ width: '12%' }}>Código</th>
-                        <th style={{ width: '35%' }}>Descripción</th>
+                        <th style={{ width: '30%' }}>Descripción</th>
                         <th style={{ width: '8%' }}>Cantidad</th>
                         <th style={{ width: '8%' }}>Unidad</th>
                         <th style={{ width: '12%' }}>Precio Unitario</th>
-                        <th style={{ width: '20%' }}>Importe</th>
+                        <th style={{ width: '8%' }}>Descuento</th>
+                        <th style={{ width: '17%' }}>Importe</th>
                       </tr>
                     </thead>
                     <tbody>

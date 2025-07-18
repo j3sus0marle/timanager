@@ -27,12 +27,13 @@ thead th {
   print-color-adjust: exact;
 }
 .col-codigo      { width: 12%; text-align: center; }
-.col-descripcion { width: 35%; text-align: left; }
+.col-descripcion { width: 30%; text-align: left; }
 .col-u           { width: 5%;  text-align: center; }
 .col-cant        { width: 6%;  text-align: center; }
 .col-pu          { width: 10%; text-align: right; }
 .col-alm         { width: 5%;  text-align: center; }
 .col-lista       { width: 10%; text-align: right; }
+.col-descuento   { width: 7%;  text-align: center; }
 .col-importe     {
   width: 12%;
   text-align: right;

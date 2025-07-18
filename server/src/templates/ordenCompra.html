@@ -69,6 +69,9 @@
           <td></td><td></td><td colspan="6" class="td-info-text">{{nomFacturar}}</td><td></td><td></td>
         </tr>
         <tr>
+          <td></td><td></td><td colspan="6" class="td-info-text">{{emailFacturar}}</td><td></td><td></td>
+        </tr>
+        <tr>
           <td></td><td></td><td colspan="6" class="td-info-text">{{dirFacturar}}</td><td></td><td></td>
         </tr>
         <tr>
@@ -106,14 +109,7 @@
     <table id="tabla-cotizacion">
       <thead>
         <tr>
-          <th class="col-codigo">CÓDIGO/CLAVE</th>
-          <th class="col-descripcion" colspan="3">DESCRIPCIÓN/CONCEPTO</th>
-          <th class="col-u">U</th>
-          <th class="col-cant">CANT</th>
-          <th class="col-pu">P.U.</th>
-          <th class="col-alm">ALM</th>
-          <th class="col-lista">P. LISTA</th>
-          <th class="col-importe">IMPORTE</th>
+          {{encabezadosTabla}}
         </tr>
       </thead>
       <tbody id="cuerpo-tabla">
@@ -123,21 +119,21 @@
     
     <table id="tabla-cotizacion">
         <tbody>
-        <tr style="height:5px;"><td colspan="10" style="border:none; background:none; padding:0; height:10px;"></td></tr>
+        <tr style="height:5px;"><td {{colspanTotales}} style="border:none; background:none; padding:0; height:10px;"></td></tr>
         <tr>
-          <td colspan="9" style="border:none; background:none; text-align:right; font-weight:bold;">SUBTOTAL</td>
+          <td {{colspanTotalesLabel}} style="border:none; background:none; text-align:right; font-weight:bold;">SUBTOTAL</td>
           <td class="col-importe subtotal-campo">{{subtotal}}</td>
         </tr>
         <tr>
-          <td colspan="9" style="border:none; background:none; text-align:right; font-weight:bold;">IVA</td>
+          <td {{colspanTotalesLabel}} style="border:none; background:none; text-align:right; font-weight:bold;">IVA</td>
           <td class="col-importe iva-campo" style="background:#fff; color:#0F2A52;">{{iva}}</td>
         </tr>
         <tr>
-          <td colspan="9" style="border:none; background:none; text-align:right; font-weight:bold;">IMPORTE DE IVA</td>
+          <td {{colspanTotalesLabel}} style="border:none; background:none; text-align:right; font-weight:bold;">IMPORTE DE IVA</td>
           <td class="col-importe impuesto-iva-campo">{{importeIva}}</td>
         </tr>
         <tr>
-          <td colspan="9" style="border:none; background:none; text-align:right; font-weight:bold;">TOTAL</td>
+          <td {{colspanTotalesLabel}} style="border:none; background:none; text-align:right; font-weight:bold;">TOTAL</td>
           <td class="col-importe total-campo">{{total}}</td>
         </tr>
         </tbody>
@@ -147,13 +143,13 @@
         <table id="tabla-bottom">
           <tbody>
             <tr>
-              <td class="col-obs" colspan="3">Uso de Mercancia</td><td colspan="2">{{usoMercancia}}</td>
+              <td class="col-obs" colspan="3">Uso de Mercancia</td><td {{colspanTotalesLabel2}}>{{usoMercancia}}</td>
             </tr>
             <tr>
-              <td class="col-obs" colspan="3">Forma de pago</td><td colspan="2">{{formaPago}}</td>
+              <td class="col-obs" colspan="3">Forma de pago</td><td {{colspanTotalesLabel2}}>{{formaPago}}</td>
             </tr>
             <tr>
-              <td class="col-obs" colspan="3">Moneda</td><td colspan="2">{{moneda}}</td>
+              <td class="col-obs" colspan="3">Moneda</td><td {{colspanTotalesLabel2}}>{{moneda}}</td>
             </tr>
             <tr><td></td></tr>
             <tr><td></td></tr>

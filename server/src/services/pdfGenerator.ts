@@ -22,6 +22,7 @@ interface OrdenCompraData {
     direccionEmpresa: string;
     telEmpresa: string;
     emailEmpresa: string;
+    emailFacturacion?: string;
   };
   direccionEnvio: {
     contacto?: string;
@@ -128,6 +129,7 @@ export class PdfGeneratorService {
       
       // Facturar a (razón social)
       nomFacturar: razonSocial.nombre || '',
+      emailFacturar: razonSocial.emailFacturacion || '',
       dirFacturar: razonSocial.direccionEmpresa || '',
       telFacturar: razonSocial.telEmpresa || '',
       
@@ -156,30 +158,151 @@ export class PdfGeneratorService {
     return plantillaVars;
   }
 
+  private calcularColspansTotales(productos: Array<any>): { colspanTotales: string, colspanTotalesLabel: string } {
+    // Determinar qué columnas mostrar basándose en los datos disponibles
+    const columnasDisponibles = {
+      codigo: productos.some(p => p.codigo || p.clave || p.codigoFabricante),
+      descripcion: productos.some(p => p.descripcion),
+      unidad: productos.some(p => p.unidad),
+      cantidad: productos.some(p => p.cantidad),
+      precioUnitario: productos.some(p => p.precioUnitario || p.precio || p.precioLista),
+      almacen: productos.some(p => p.alm || p.almacen),
+      precioLista: productos.some(p => p.precioLista && p.precioLista > 0),
+      descuento: productos.some(p => p.descuento && p.descuento > 0),
+      importe: productos.some(p => p.importe || p.total || p.cantidad)
+    };
+
+    // Contar columnas activas
+    let numeroColumnas = 0;
+    if (columnasDisponibles.codigo) numeroColumnas++;
+    if (columnasDisponibles.descripcion) numeroColumnas += 2; // colspan="2"
+    if (columnasDisponibles.unidad) numeroColumnas++;
+    if (columnasDisponibles.cantidad) numeroColumnas++;
+    if (columnasDisponibles.precioUnitario) numeroColumnas++;
+    if (columnasDisponibles.almacen) numeroColumnas++;
+    if (columnasDisponibles.precioLista) numeroColumnas++;
+    if (columnasDisponibles.descuento) numeroColumnas++;
+    if (columnasDisponibles.importe) numeroColumnas++;
+
+    const colspanTotales = `colspan="${numeroColumnas}"`;
+    const colspanTotalesLabel = `colspan="${numeroColumnas - 1}"`;
+
+    return { colspanTotales, colspanTotalesLabel };
+  }
+
+  private generarEncabezadosTabla(productos: Array<any>): string {
+    // Determinar qué columnas mostrar basándose en los datos disponibles
+    const columnasDisponibles = {
+      codigo: productos.some(p => p.codigo || p.clave || p.codigoFabricante),
+      descripcion: productos.some(p => p.descripcion),
+      unidad: productos.some(p => p.unidad),
+      cantidad: productos.some(p => p.cantidad),
+      precioUnitario: productos.some(p => p.precioUnitario || p.precio || p.precioLista),
+      almacen: productos.some(p => p.alm || p.almacen),
+      precioLista: productos.some(p => p.precioLista && p.precioLista > 0),
+      descuento: productos.some(p => p.descuento && p.descuento > 0),
+      importe: productos.some(p => p.importe || p.total || p.cantidad)
+    };
+
+    let encabezados = '';
+    
+    if (columnasDisponibles.codigo) {
+      encabezados += '<th class="col-codigo">CÓDIGO/CLAVE</th>';
+    }
+    if (columnasDisponibles.descripcion) {
+      encabezados += '<th class="col-descripcion" colspan="2">DESCRIPCIÓN/CONCEPTO</th>';
+    }
+    if (columnasDisponibles.unidad) {
+      encabezados += '<th class="col-u">U</th>';
+    }
+    if (columnasDisponibles.cantidad) {
+      encabezados += '<th class="col-cant">CANT</th>';
+    }
+    if (columnasDisponibles.precioUnitario) {
+      encabezados += '<th class="col-pu">P.U.</th>';
+    }
+    if (columnasDisponibles.almacen) {
+      encabezados += '<th class="col-alm">ALM</th>';
+    }
+    if (columnasDisponibles.precioLista) {
+      encabezados += '<th class="col-lista">P. LISTA</th>';
+    }
+    if (columnasDisponibles.descuento) {
+      encabezados += '<th class="col-descuento">DESC %</th>';
+    }
+    if (columnasDisponibles.importe) {
+      encabezados += '<th class="col-importe">IMPORTE</th>';
+    }
+
+    return encabezados;
+  }
+
   private generarFilasProductos(productos: Array<any>): string {
     if (!productos || productos.length === 0) {
       return '<tr><td colspan="10">No hay productos</td></tr>';
     }
 
+    // Determinar qué columnas mostrar basándose en los datos disponibles
+    const columnasDisponibles = {
+      codigo: productos.some(p => p.codigo || p.clave || p.codigoFabricante),
+      descripcion: productos.some(p => p.descripcion),
+      unidad: productos.some(p => p.unidad),
+      cantidad: productos.some(p => p.cantidad),
+      precioUnitario: productos.some(p => p.precioUnitario || p.precio || p.precioLista),
+      almacen: productos.some(p => p.alm || p.almacen),
+      precioLista: productos.some(p => p.precioLista && p.precioLista > 0),
+      descuento: productos.some(p => p.descuento && p.descuento > 0),
+      importe: productos.some(p => p.importe || p.total || p.cantidad)
+    };
+
     return productos.map((producto, index) => {
-      const cantidad = producto.cantidad || 0;
-      const precioUnitario = producto.precioUnitario || producto.precio || 0;
-      const precioLista = producto.precioLista || 0;
-      const importe = producto.importe || producto.total || (cantidad * precioUnitario);
-      const almacen = producto.alm || producto.almacen || '';
+      const cantidad = Number(producto.cantidad) || 0;
+      const precioUnitario = Number(producto.precioUnitario) || Number(producto.precio) || Number(producto.precioLista) || 0;
+      const precioLista = Number(producto.precioLista) || 0;
+      const descuento = Number(producto.descuento) || 0;
       
-      return `
-        <tr>
-          <td class="col-codigo">${producto.codigo || producto.clave || ''}</td>
-          <td class="col-descripcion" colspan="3">${producto.descripcion || producto.concepto || ''}</td>
-          <td class="col-u">${producto.unidad || ''}</td>
-          <td class="col-cant">${cantidad}</td>
-          <td class="col-pu">${this.formatearMoneda(precioUnitario)}</td>
-          <td class="col-alm">${almacen}</td>
-          <td class="col-lista">${precioLista > 0 ? this.formatearMoneda(precioLista) : ''}</td>
-          <td class="col-importe">${this.formatearMoneda(importe)}</td>
-        </tr>
-      `;
+      // Calcular importe con descuento
+      let importe = producto.importe || producto.total;
+      if (!importe) {
+        const subtotal = cantidad * precioUnitario;
+        importe = subtotal * (1 - descuento / 100);
+      }
+      
+      const almacen = producto.alm || producto.almacen || '';
+      const codigo = producto.codigo || producto.clave || producto.codigoFabricante || '';
+      
+      let fila = '<tr>';
+      
+      if (columnasDisponibles.codigo) {
+        fila += `<td class="col-codigo">${codigo}</td>`;
+      }
+      if (columnasDisponibles.descripcion) {
+        fila += `<td class="col-descripcion" colspan="2">${producto.descripcion || producto.concepto || ''}</td>`;
+      }
+      if (columnasDisponibles.unidad) {
+        fila += `<td class="col-u">${producto.unidad || ''}</td>`;
+      }
+      if (columnasDisponibles.cantidad) {
+        fila += `<td class="col-cant">${cantidad}</td>`;
+      }
+      if (columnasDisponibles.precioUnitario) {
+        fila += `<td class="col-pu">${this.formatearMoneda(precioUnitario)}</td>`;
+      }
+      if (columnasDisponibles.almacen) {
+        fila += `<td class="col-alm">${almacen}</td>`;
+      }
+      if (columnasDisponibles.precioLista) {
+        fila += `<td class="col-lista">${precioLista > 0 ? this.formatearMoneda(precioLista) : ''}</td>`;
+      }
+      if (columnasDisponibles.descuento) {
+        fila += `<td class="col-descuento">${descuento > 0 ? descuento.toFixed(1) + '%' : ''}</td>`;
+      }
+      if (columnasDisponibles.importe) {
+        fila += `<td class="col-importe">${this.formatearMoneda(importe)}</td>`;
+      }
+      
+      fila += '</tr>';
+      return fila;
     }).join('');
   }
 
@@ -194,9 +317,14 @@ export class PdfGeneratorService {
       // Procesar los datos de la orden
       const plantillaVars = this.procesarDatosOrden(datosOrden);
       
-      // Generar las filas de productos
+      // Generar las filas y encabezados de productos dinámicamente
       const productos = datosOrden.productos || datosOrden.datosPdf?.datosExtraidos?.productos || [];
+      const encabezadosTabla = this.generarEncabezadosTabla(productos);
       const filasProductos = this.generarFilasProductos(productos);
+      const { colspanTotales, colspanTotalesLabel } = this.calcularColspansTotales(productos);
+      
+      // Calcular colspan para la tabla inferior (son 5 columnas fijas)
+      const colspanTotalesLabel2 = 'colspan="2"';
       
       // Reemplazar variables en el HTML
       Object.keys(plantillaVars).forEach(key => {
@@ -204,8 +332,12 @@ export class PdfGeneratorService {
         htmlTemplate = htmlTemplate.replace(regex, plantillaVars[key] || '');
       });
       
-      // Reemplazar la sección de productos
+      // Reemplazar las secciones de productos y totales
+      htmlTemplate = htmlTemplate.replace('{{encabezadosTabla}}', encabezadosTabla);
       htmlTemplate = htmlTemplate.replace('{{productos}}', filasProductos);
+      htmlTemplate = htmlTemplate.replace(/{{colspanTotales}}/g, colspanTotales);
+      htmlTemplate = htmlTemplate.replace(/{{colspanTotalesLabel}}/g, colspanTotalesLabel);
+      htmlTemplate = htmlTemplate.replace(/{{colspanTotalesLabel2}}/g, colspanTotalesLabel2);
       
       // Leer CSS
       const cssPath = path.join(this.templatesPath, 'ordenCompra.css');
