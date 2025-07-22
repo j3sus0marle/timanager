@@ -138,6 +138,7 @@ export interface CotizacionCanalizacion {
   _id?: string;
   numeroPresupuesto: string;
   cliente: string | Cliente;
+  razonSocial?: string | RazonSocial; // Referencia a la razón social (opcional)
   fecha: Date | string;
   vigencia: Date | string;
   subtotal: number;

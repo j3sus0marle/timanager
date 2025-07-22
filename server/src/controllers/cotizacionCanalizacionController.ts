@@ -3,7 +3,9 @@ import CotizacionCanalizacion from '../models/CotizacionCanalizacion';
 
 export const getCotizacionesCanalizacion = async (req: Request, res: Response) => {
   try {
-    const cotizaciones = await CotizacionCanalizacion.find().sort({ fechaActualizacion: -1 });
+    const cotizaciones = await CotizacionCanalizacion.find()
+      .populate('razonSocial', 'nombre rfc emailEmpresa telEmpresa direccionEmpresa')
+      .sort({ fechaActualizacion: -1 });
     res.json(cotizaciones);
   } catch (err) {
     console.error('Error al obtener cotizaciones de canalización:', err);
@@ -13,7 +15,8 @@ export const getCotizacionesCanalizacion = async (req: Request, res: Response) =
 
 export const getCotizacionCanalizacionById = async (req: Request, res: Response) => {
   try {
-    const cotizacion = await CotizacionCanalizacion.findById(req.params.id);
+    const cotizacion = await CotizacionCanalizacion.findById(req.params.id)
+      .populate('razonSocial', 'nombre rfc emailEmpresa telEmpresa direccionEmpresa emailFacturacion direccionEnvio');
     if (!cotizacion) {
       return res.status(404).json({ error: 'Cotización de canalización no encontrada' });
     }
@@ -62,7 +65,7 @@ export const updateCotizacionCanalizacion = async (req: Request, res: Response) 
       req.params.id, 
       updateData, 
       { new: true, runValidators: true }
-    );
+    ).populate('razonSocial', 'nombre rfc emailEmpresa telEmpresa direccionEmpresa emailFacturacion direccionEnvio');
     
     if (!cotizacion) {
       return res.status(404).json({ error: 'Cotización de canalización no encontrada' });
@@ -114,7 +117,9 @@ export const searchCotizacionesCanalizacion = async (req: Request, res: Response
       if (fechaHasta) filter.fecha.$lte = new Date(fechaHasta as string);
     }
     
-    const cotizaciones = await CotizacionCanalizacion.find(filter).sort({ fechaActualizacion: -1 });
+    const cotizaciones = await CotizacionCanalizacion.find(filter)
+      .populate('razonSocial', 'nombre rfc emailEmpresa telEmpresa direccionEmpresa')
+      .sort({ fechaActualizacion: -1 });
     res.json(cotizaciones);
   } catch (err) {
     console.error('Error al buscar cotizaciones de canalización:', err);
@@ -139,7 +144,7 @@ export const cambiarEstadoCotizacion = async (req: Request, res: Response) => {
         fechaActualizacion: new Date() 
       },
       { new: true, runValidators: true }
-    );
+    ).populate('razonSocial', 'nombre rfc emailEmpresa telEmpresa direccionEmpresa');
     
     if (!cotizacion) {
       return res.status(404).json({ error: 'Cotización de canalización no encontrada' });

@@ -3,6 +3,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface ICotizacionCanalizacion extends Document {
   numeroPresupuesto: string;
   cliente: string;
+  razonSocial?: string; // Referencia al ID de la razón social (opcional)
   fecha: Date;
   vigencia: Date;
   subtotal: number;
@@ -68,6 +69,11 @@ const CotizacionCanalizacionSchema = new Schema<ICotizacionCanalizacion>({
     type: String, 
     required: true,
     trim: true 
+  },
+  razonSocial: { 
+    type: Schema.Types.ObjectId,
+    ref: 'RazonSocial',
+    required: false
   },
   fecha: { 
     type: Date, 
