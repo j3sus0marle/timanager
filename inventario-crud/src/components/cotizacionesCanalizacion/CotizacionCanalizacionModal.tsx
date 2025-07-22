@@ -508,7 +508,7 @@ const CotizacionCanalizacionModal: React.FC<CotizacionCanalizacionModalProps> = 
         <Form>
           {/* Primera fila: Cliente y Razón Social */}
           <div className="row">
-            <div className="col-md-6">
+            <div className="col-md-4">
               <Form.Group className="mb-2">
                 <Form.Label>Cliente</Form.Label>
                 <div className="position-relative">
@@ -539,7 +539,7 @@ const CotizacionCanalizacionModal: React.FC<CotizacionCanalizacionModalProps> = 
                 </div>
               </Form.Group>
             </div>
-            <div className="col-md-6">
+            <div className="col-md-4">
               <Form.Group className="mb-2">
                 <Form.Label>Razón Social</Form.Label>
                 <div className="position-relative">
@@ -570,11 +570,7 @@ const CotizacionCanalizacionModal: React.FC<CotizacionCanalizacionModalProps> = 
                 </div>
               </Form.Group>
             </div>
-          </div>
-
-          {/* Segunda fila: Número de Presupuesto */}
-          <div className="row">
-            <div className="col-md-4">
+                        <div className="col-md-4">
               <Form.Group className="mb-2">
                 <Form.Label>No. Presupuesto</Form.Label>
                 <Form.Control
@@ -587,29 +583,22 @@ const CotizacionCanalizacionModal: React.FC<CotizacionCanalizacionModalProps> = 
             </div>
           </div>
 
+          {/* Segunda fila: Número de Presupuesto */}
+          <div className="row">
+
+          </div>
+
           {/* Tercera fila: Fecha, Vigencia, Utilidad y Estado */}
           <div className="row">
-            <div className="col-md-3">
-              <Form.Group className="mb-2">
-                <Form.Label>Fecha</Form.Label>
+                        <div className="col-md-6">
+              <Form.Group className="mb-3">
+                <Form.Label>Comentarios</Form.Label>
                 <Form.Control
-                  type="date"
-                  value={formData.fecha instanceof Date ? formData.fecha.toISOString().split('T')[0] : (formData.fecha || '')}
-                  onChange={(e) => setFormData({ ...formData, fecha: e.target.value })}
-                />
-              </Form.Group>
-            </div>
-            <div className="col-md-3">
-              <Form.Group className="mb-2">
-                <Form.Label>Vigencia</Form.Label>
-                <Form.Control
-                  type="date"
-                  value={
-                    formData.vigencia instanceof Date
-                      ? formData.vigencia.toISOString().split('T')[0]
-                      : (formData.vigencia || '')
-                  }
-                  onChange={(e) => setFormData({ ...formData, vigencia: e.target.value })}
+                  as="textarea"
+                  rows={2}
+                  value={formData.comentarios}
+                  onChange={(e) => setFormData({ ...formData, comentarios: e.target.value })}
+                  placeholder="Comentarios adicionales sobre la cotización..."
                 />
               </Form.Group>
             </div>
@@ -644,18 +633,7 @@ const CotizacionCanalizacionModal: React.FC<CotizacionCanalizacionModalProps> = 
 
           {/* Tercera fila: Comentarios */}
           <div className="row">
-            <div className="col-md-12">
-              <Form.Group className="mb-3">
-                <Form.Label>Comentarios</Form.Label>
-                <Form.Control
-                  as="textarea"
-                  rows={2}
-                  value={formData.comentarios}
-                  onChange={(e) => setFormData({ ...formData, comentarios: e.target.value })}
-                  placeholder="Comentarios adicionales sobre la cotización..."
-                />
-              </Form.Group>
-            </div>
+
           </div>
 
           {/* Tabla de productos */}
