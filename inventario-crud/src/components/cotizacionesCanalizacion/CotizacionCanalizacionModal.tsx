@@ -190,11 +190,26 @@ const CotizacionCanalizacionModal: React.FC<CotizacionCanalizacionModalProps> = 
     
     // Si es descripción, buscar en materiales para autocompletar precio
     if (field === 'descripcion' && value && materiales.length > 0) {
-      const material = materiales.find(m => 
-        m.material.toLowerCase().includes(value.toLowerCase()) ||
-        m.tipo.toLowerCase().includes(value.toLowerCase()) ||
-        `${m.tipo} - ${m.material}${m.medida ? ` - ${m.medida}` : ''}`.toLowerCase().includes(value.toLowerCase())
-      );
+      // Dividir el texto de búsqueda en palabras individuales para mejor coincidencia
+      const searchWords = value.toLowerCase().trim().split(/\s+/);
+      
+      const material = materiales.find(m => {
+        const descripcionCompleta = `${m.tipo} - ${m.material}${m.medida ? ` - ${m.medida}` : ''}`;
+        
+        // Crear un array con todos los campos de búsqueda
+        const searchableFields = [
+          m.material.toLowerCase(),
+          m.tipo.toLowerCase(),
+          m.medida?.toLowerCase() || '',
+          descripcionCompleta.toLowerCase()
+        ];
+        
+        // Verificar que cada palabra de búsqueda aparezca en AL MENOS uno de los campos
+        return searchWords.every((word: string) => 
+          searchableFields.some((field: string) => field.includes(word))
+        );
+      });
+      
       if (material) {
         items[index].precioUnitario = material.precio || 0;
       }
@@ -245,14 +260,24 @@ const CotizacionCanalizacionModal: React.FC<CotizacionCanalizacionModalProps> = 
     let filtered: MaterialCanalizacion[] = [];
     
     if (value.length > 0) {
+      // Dividir el texto de búsqueda en palabras individuales
+      const searchWords = value.toLowerCase().trim().split(/\s+/);
+      
       filtered = materiales.filter(material => {
         const descripcionCompleta = `${material.tipo} - ${material.material}${material.medida ? ` - ${material.medida}` : ''}`;
-        return (
-          material.material.toLowerCase().includes(value.toLowerCase()) ||
-          material.tipo.toLowerCase().includes(value.toLowerCase()) ||
-          material.medida?.toLowerCase().includes(value.toLowerCase()) ||
-          material.proveedor.toLowerCase().includes(value.toLowerCase()) ||
-          descripcionCompleta.toLowerCase().includes(value.toLowerCase())
+        
+        // Crear un array con todos los campos de búsqueda
+        const searchableFields = [
+          material.material.toLowerCase(),
+          material.tipo.toLowerCase(),
+          material.medida?.toLowerCase() || '',
+          material.proveedor.toLowerCase(),
+          descripcionCompleta.toLowerCase()
+        ];
+        
+        // Verificar que cada palabra de búsqueda aparezca en AL MENOS uno de los campos
+        return searchWords.every(word => 
+          searchableFields.some(field => field.includes(word))
         );
       });
     } else {
@@ -285,14 +310,24 @@ const CotizacionCanalizacionModal: React.FC<CotizacionCanalizacionModalProps> = 
     let filtered: MaterialCanalizacion[] = [];
     
     if (currentValue.length > 0) {
+      // Dividir el texto de búsqueda en palabras individuales
+      const searchWords = currentValue.toLowerCase().trim().split(/\s+/);
+      
       filtered = materiales.filter(material => {
         const descripcionCompleta = `${material.tipo} - ${material.material}${material.medida ? ` - ${material.medida}` : ''}`;
-        return (
-          material.material.toLowerCase().includes(currentValue.toLowerCase()) ||
-          material.tipo.toLowerCase().includes(currentValue.toLowerCase()) ||
-          material.medida?.toLowerCase().includes(currentValue.toLowerCase()) ||
-          material.proveedor.toLowerCase().includes(currentValue.toLowerCase()) ||
-          descripcionCompleta.toLowerCase().includes(currentValue.toLowerCase())
+        
+        // Crear un array con todos los campos de búsqueda
+        const searchableFields = [
+          material.material.toLowerCase(),
+          material.tipo.toLowerCase(),
+          material.medida?.toLowerCase() || '',
+          material.proveedor.toLowerCase(),
+          descripcionCompleta.toLowerCase()
+        ];
+        
+        // Verificar que cada palabra de búsqueda aparezca en AL MENOS uno de los campos
+        return searchWords.every(word => 
+          searchableFields.some(field => field.includes(word))
         );
       });
     } else {
