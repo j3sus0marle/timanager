@@ -4,7 +4,7 @@ import CotizacionCanalizacionList from "../components/cotizacionesCanalizacion/C
 const CotizacionesCanalizacion: React.FC = () => {
   return (
     <div>
-      <h2>Cotizaciones de Canalización</h2>
+      <h2>Presupuesto de Canalización</h2>
       <CotizacionCanalizacionList />
     </div>
   );

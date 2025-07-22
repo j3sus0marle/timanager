@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form } from 'react-bootstrap';
 import { createPortal } from 'react-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faTrash, faGripVertical } from '@fortawesome/free-solid-svg-icons';
 import { CotizacionCanalizacion, Cliente, MaterialCanalizacion, RazonSocial } from '../../types';
 
 interface CotizacionCanalizacionModalProps {
@@ -55,6 +55,9 @@ const CotizacionCanalizacionModal: React.FC<CotizacionCanalizacionModalProps> = 
   const [showProductSuggestions, setShowProductSuggestions] = useState<{[key: number]: boolean}>({});
   const [activeRow, setActiveRow] = useState<number | null>(null);
   const [dropdownPosition, setDropdownPosition] = useState<{top: number, left: number, width: number}>({top: 0, left: 0, width: 0});
+
+  // Estados para drag & drop
+  const [draggedItem, setDraggedItem] = useState<number | null>(null);
 
   // Efectos
   useEffect(() => {
@@ -380,6 +383,65 @@ const CotizacionCanalizacionModal: React.FC<CotizacionCanalizacionModalProps> = 
     });
   };
 
+  // Funciones para drag & drop
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedItem(index);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', '');
+    // Añadir estilo visual al elemento que se arrastra
+    (e.target as HTMLElement).style.opacity = '0.5';
+  };
+
+  const handleDragEnd = (e: React.DragEvent) => {
+    setDraggedItem(null);
+    (e.target as HTMLElement).style.opacity = '1';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    
+    if (draggedItem === null || draggedItem === dropIndex) {
+      return;
+    }
+
+    const items = [...(formData.items || [])];
+    
+    // No permitir reordenar la última fila vacía
+    if (dropIndex === items.length - 1 && items[dropIndex].descripcion === '') {
+      return;
+    }
+    
+    // No permitir arrastrar la última fila vacía
+    if (draggedItem === items.length - 1 && items[draggedItem].descripcion === '') {
+      return;
+    }
+
+    // Reordenar los elementos
+    const draggedElement = items[draggedItem];
+    items.splice(draggedItem, 1);
+    items.splice(dropIndex, 0, draggedElement);
+
+    // Asegurar fila vacía al final
+    const updatedItems = ensureEmptyRow(items);
+
+    // Recalcular totales
+    const itemsWithData = updatedItems.filter(item => item.descripcion !== '');
+    const newSubtotal = itemsWithData.reduce((sum, item) => sum + (item.subtotal || 0), 0);
+    const newTotal = newSubtotal * (1 + (formData.utilidad || 30) / 100);
+
+    setFormData({
+      ...formData,
+      items: updatedItems,
+      subtotal: newSubtotal,
+      total: newTotal
+    });
+  };
+
   const handleSave = () => {
     // Filtrar items vacíos antes de guardar
     const itemsToSave = (formData.items || []).filter(item => 
@@ -573,17 +635,38 @@ const CotizacionCanalizacionModal: React.FC<CotizacionCanalizacionModalProps> = 
               <table className="table table-striped table-hover">
                 <thead className="table-dark">
                   <tr>
+                    <th style={{ width: '3%' }}>⋮⋮</th>
                     <th style={{ width: '5%' }}>#</th>
                     <th style={{ width: '35%' }}>Descripción</th>
                     <th style={{ width: '10%' }}>Cantidad</th>
                     <th style={{ width: '15%' }}>Precio Unitario</th>
                     <th style={{ width: '15%' }}>Importe</th>
-                    <th style={{ width: '20%' }}>Acciones</th>
+                    <th style={{ width: '17%' }}>Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
                   {formData.items && formData.items.map((item, index) => (
-                    <tr key={index}>
+                    <tr 
+                      key={index}
+                      draggable={item.descripcion !== ''}
+                      onDragStart={(e) => handleDragStart(e, index)}
+                      onDragEnd={handleDragEnd}
+                      onDragOver={handleDragOver}
+                      onDrop={(e) => handleDrop(e, index)}
+                      style={{
+                        cursor: item.descripcion !== '' ? 'move' : 'default',
+                        backgroundColor: draggedItem === index ? '#f8f9fa' : 'transparent'
+                      }}
+                    >
+                      <td className="text-center" style={{ cursor: item.descripcion !== '' ? 'grab' : 'default' }}>
+                        {item.descripcion !== '' && (
+                          <FontAwesomeIcon 
+                            icon={faGripVertical} 
+                            className="text-muted"
+                            title="Arrastrar para reordenar"
+                          />
+                        )}
+                      </td>
                       <td>{index + 1}</td>
                       <td>
                         <div className="position-relative">
