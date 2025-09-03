@@ -14,7 +14,7 @@ export interface IColaborador extends Document {
 
 const ColaboradorSchema: Schema = new Schema({
   numeroEmpleado: { 
-    type: String, 
+    type: Number, 
     unique: true 
   },
   nombre: { 
@@ -54,7 +54,7 @@ const ColaboradorSchema: Schema = new Schema({
 ColaboradorSchema.pre('save', async function(next) {
   if (this.isNew) {
     const count = await mongoose.model('Colaborador').countDocuments();
-    this.numeroEmpleado = `EMP${(count + 1).toString().padStart(4, '0')}`;
+    this.numeroEmpleado = count + 1;
   }
   next();
 });

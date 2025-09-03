@@ -8,7 +8,7 @@ export const getColaboradores = async (req: Request, res: Response) => {
   try {
     const colaboradores = await Colaborador.find()
       .populate('razonSocialId', 'nombre')
-      .sort({ nombre: 1 });
+      .sort({ numeroEmpleado: 1 }); // Ordenar por numeroEmpleado de manera ascendente
     res.json(colaboradores);
   } catch (err) {
     res.status(500).json({ error: 'Error al obtener colaboradores' });
