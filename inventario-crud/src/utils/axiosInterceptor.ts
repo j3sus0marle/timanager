@@ -1,6 +1,9 @@
 // src/utils/axiosInterceptor.ts
 import axios from 'axios';
 
+// Configurar URL base
+axios.defaults.baseURL = import.meta.env.VITE_API_URL;
+
 // Configurar interceptor para añadir token automáticamente
 axios.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');

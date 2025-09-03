@@ -23,6 +23,7 @@ import "./cronNotificaciones";
 import authRoutes from './routes/auth';
 import { authMiddleware } from './routes/auth';
 import colaboradoresRoutes from './routes/colaboradores';
+import documentosRoutes from './routes/documentos';
 
 dotenv.config();
 const app: Application = express();
@@ -52,6 +53,7 @@ app.use("/api/cotizaciones-canalizacion", cotizacionCanalizacionRoutes);
 app.use("/api/notification-config", notificationConfigRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/colaboradores', colaboradoresRoutes);
+app.use('/api/documentos', documentosRoutes);
 
 app.post("/api/notificar-guias", async (req, res) => {
   try {

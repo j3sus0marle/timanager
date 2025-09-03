@@ -66,6 +66,14 @@ const MainLayout: React.FC<{ username?: string | null, onLogout?: () => void }> 
         { path: "/guias", label: "Guías", icon: <FaFileAlt size={14} /> },
       ],
     },
+    // Papelería sin agrupar
+    {
+      label: "Papelería",
+      icon: <FaFileAlt size={16} />,
+      items: [
+        { path: "/papeleria", label: "Papelería", icon: <FaFileAlt size={14} /> },
+      ],
+    },
     {
       label: "Proyectos",
       icon: <FaProjectDiagram size={16} />,
