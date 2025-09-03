@@ -123,6 +123,18 @@ export interface OrdenCompra {
   updatedAt?: string;
 }
 
+export interface Colaborador {
+  _id?: string;
+  numeroEmpleado?: string;
+  nombre: string;
+  nss: string;
+  puesto: string;
+  fotografia?: string;
+  fechaAltaIMSS: Date | string;
+  razonSocialId: string;
+  activo: boolean;
+}
+
 export interface MaterialCanalizacion {
   _id?: string;
   tipo: string;

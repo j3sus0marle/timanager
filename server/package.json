@@ -5,7 +5,10 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node dist/index.js",
-    "dev": "ts-node-dev src/index.ts"
+    "dev": "ts-node-dev src/index.ts",
+    "dev:background": "ts-node-dev --respawn --transpile-only src/index.ts & echo $! > .pidfile",
+    "stop": "kill $(cat .pidfile) && rm .pidfile",
+    "seed": "ts-node scripts/seed-data.ts"
   },
   "keywords": [],
   "author": "",

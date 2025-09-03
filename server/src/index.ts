@@ -2,6 +2,7 @@ import express, { Application, Request, Response } from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
+import path from "path";
 
 import itemRoutes from "./routes/itemRoutes";
 import vendedoresRoutes from './routes/vendedores'
@@ -21,11 +22,15 @@ import { revisarYNotificarGuias } from "./notificacionService";
 import "./cronNotificaciones";
 import authRoutes from './routes/auth';
 import { authMiddleware } from './routes/auth';
+import colaboradoresRoutes from './routes/colaboradores';
 
 dotenv.config();
 const app: Application = express();
 app.use(cors());
 app.use(express.json());
+
+// Servir archivos estáticos
+app.use('/api/uploads', express.static(path.join(__dirname, '../uploads')));
 
 mongoose.connect(process.env.MONGO_URI || "")
   .then(() => console.log("Conectado a MongoDB"))
@@ -46,6 +51,7 @@ app.use("/api/material-canalizacion", materialCanalizacionRoutes);
 app.use("/api/cotizaciones-canalizacion", cotizacionCanalizacionRoutes);
 app.use("/api/notification-config", notificationConfigRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/colaboradores', colaboradoresRoutes);
 
 app.post("/api/notificar-guias", async (req, res) => {
   try {

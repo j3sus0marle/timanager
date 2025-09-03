@@ -50,6 +50,14 @@ const MainLayout: React.FC<{ username?: string | null, onLogout?: () => void }> 
         { path: "/dashboard", label: "Dashboard", icon: <FaTachometerAlt size={14} /> },
       ],
     },
+    // Colaboradores sin agrupar
+    {
+      label: "Colaboradores",
+      icon: <FaUsers size={16} />,
+      items: [
+        { path: "/colaboradores", label: "Colaboradores", icon: <FaUsers size={14} /> },
+      ],
+    },
     // Guías sin agrupar
     {
       label: "Guías",

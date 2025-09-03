@@ -15,6 +15,7 @@ import MaterialCanalizacion from "./pages/Mat-elec";
 import Inventario from "./pages/Inventario";
 import InventarioExterior from "./pages/InventarioExterior";
 import Guias from "./pages/Guias";
+import Colaboradores from "./pages/Colaboradores";
 import Login from "./components/Login";
 import Register from "./components/Register";
 import UsuarioConfig from "./pages/UsuarioConfig";
@@ -190,6 +191,7 @@ function App() {
           <Route path="inventario" element={<Inventario />} />
           <Route path="inventarioExterior" element={<InventarioExterior />} />
           <Route path="guias" element={<Guias />} />
+          <Route path="colaboradores" element={<Colaboradores />} />
           <Route path="/usuario" element={<UsuarioConfig username={username || ''} onUpdate={handleUpdateUser} />} />
 
         </Route>
