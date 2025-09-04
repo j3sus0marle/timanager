@@ -181,7 +181,18 @@ const Papeleria: React.FC = () => {
                   >
                     <p>
                       {doc.tipo === 'pdf' ? <FileOutlined /> : <PictureOutlined />}
-                      <a href={doc.url} target="_blank" rel="noopener noreferrer" style={{ marginLeft: '8px' }}>
+                      <a 
+                        href={`http://localhost:6051/api/documentos/ver/${doc.url.split('/').pop()}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        style={{ marginLeft: '8px' }}
+                        onClick={() => {
+                          console.log('Documento completo:', doc);
+                          console.log('URL original:', doc.url);
+                          console.log('Nombre del archivo:', doc.url.split('/').pop());
+                          console.log('URL final:', `http://localhost:6051/api/documentos/ver/${doc.url.split('/').pop()}`);
+                        }}
+                      >
                         Ver documento
                       </a>
                     </p>
