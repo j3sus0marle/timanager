@@ -103,17 +103,19 @@ const ColaboradorList: React.FC = () => {
 
   const handleSearch = (term: string) => {
     setSearchTerm(term);
-    if (!term) {
-      setFilteredColaboradores(colaboradores);
-    } else {
-      const lower = term.toLowerCase();
-      setFilteredColaboradores(colaboradores.filter(c =>
-        c.numeroEmpleado?.toLowerCase().includes(lower) ||
-        c.nombre.toLowerCase().includes(lower) ||
-        c.nss.toLowerCase().includes(lower) ||
-        c.puesto.toLowerCase().includes(lower)
-      ));
-    }
+    setCurrentPage(1); // Resetear a la primera página cuando se busca
+    
+    const lower = term.toLowerCase().trim();
+    const filtered = !lower
+      ? colaboradores
+      : colaboradores.filter(c =>
+          (c.numeroEmpleado || '').toString().toLowerCase().includes(lower) ||
+          c.nombre.toLowerCase().includes(lower) ||
+          c.nss.toLowerCase().includes(lower) ||
+          c.puesto.toLowerCase().includes(lower)
+        );
+
+    setFilteredColaboradores(filtered);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
