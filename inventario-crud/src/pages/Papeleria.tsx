@@ -143,9 +143,17 @@ const Papeleria: React.FC = () => {
             label: (
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <img 
-                  src={colaborador.fotografia || '/test.png'} 
+                  src={colaborador.fotografia ? 
+                    `http://localhost:6051/api/colaboradores/foto/${colaborador.fotografia.split('/').pop()}` 
+                    : '/test.png'
+                  } 
                   alt={colaborador.nombre}
                   style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }}
+                  onError={(e) => {
+                    const img = e.target as HTMLImageElement;
+                    img.src = '/test.png';
+                    console.log('Error cargando imagen para:', colaborador.nombre, 'URL:', colaborador.fotografia);
+                  }}
                 />
                 <span>ID: {colaborador.numeroEmpleado} - {colaborador.nombre}</span>
               </div>

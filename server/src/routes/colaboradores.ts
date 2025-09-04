@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import multer from 'multer';
-import { getColaboradores, getColaboradorById, createColaborador, updateColaborador, deleteColaborador } from '../controllers/colaboradorController';
+import { getColaboradores, getColaboradorById, createColaborador, updateColaborador, deleteColaborador, getFotografia } from '../controllers/colaboradorController';
 import upload from '../utils/uploadConfig';
 
 const router = Router();
@@ -30,6 +30,7 @@ const uploadMiddleware = (req: any, res: any, next: any) => {
 
 router.get('/', asyncHandler(getColaboradores));
 router.get('/:id', asyncHandler(getColaboradorById));
+router.get('/foto/:nombre', asyncHandler(getFotografia));
 router.post('/', uploadMiddleware, asyncHandler(createColaborador));
 router.put('/:id', uploadMiddleware, asyncHandler(updateColaborador));
 router.delete('/:id', asyncHandler(deleteColaborador));

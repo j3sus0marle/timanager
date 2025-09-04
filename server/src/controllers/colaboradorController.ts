@@ -220,3 +220,44 @@ export const deleteColaborador = async (req: Request, res: Response) => {
 export const validateNSS = (nss: string): boolean => {
   return /^\d{11}$/.test(nss);
 };
+
+export const getFotografia = async (req: Request, res: Response) => {
+  try {
+    const nombreArchivo = req.params.nombre;
+    console.log('Nombre de archivo de foto solicitado:', nombreArchivo);
+    
+    // Construir la ruta absoluta al archivo
+    const filePath = path.resolve(__dirname, '../../uploads/fotografias', nombreArchivo);
+    console.log('Ruta completa de la foto:', filePath);
+    
+    // Verificar si el archivo existe
+    if (!fs.existsSync(filePath)) {
+      console.error('Foto no encontrada en:', filePath);
+      return res.status(404).json({ 
+        error: 'Foto no encontrada',
+        requestedPath: filePath,
+        fileName: nombreArchivo 
+      });
+    }
+
+    // Verificar que el archivo está dentro del directorio permitido
+    const uploadsDir = path.resolve(__dirname, '../../uploads/fotografias');
+    if (!filePath.startsWith(uploadsDir)) {
+      console.error('Intento de acceso a foto fuera del directorio permitido');
+      return res.status(403).json({ error: 'Acceso no permitido' });
+    }
+
+    console.log('Enviando foto:', filePath);
+    res.sendFile(filePath, (err) => {
+      if (err) {
+        console.error('Error al enviar foto:', err);
+        res.status(500).json({ error: 'Error al enviar la foto' });
+      } else {
+        console.log('Foto enviada correctamente');
+      }
+    });
+  } catch (err) {
+    console.error('Error al servir la foto:', err);
+    res.status(500).json({ error: 'Error al servir la foto' });
+  }
+};
