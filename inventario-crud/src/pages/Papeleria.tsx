@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Collapse, Modal, Form, DatePicker, message, Upload, Tooltip } from 'antd';
-import { PlusOutlined, DeleteOutlined, FileOutlined, PictureOutlined } from '@ant-design/icons';
+import { PlusOutlined, DeleteOutlined, FileOutlined, PictureOutlined, EditOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import moment from 'moment';
 import '../components/colaboradores/Colaboradores.css';
@@ -21,14 +21,26 @@ interface Documento {
   fechaVencimiento?: string;
 }
 
+interface EditDocumentState {
+  visible: boolean;
+  documento: Documento | null;
+  colaboradorId: string;
+}
+
 
 
 const Papeleria: React.FC = () => {
   const [colaboradores, setColaboradores] = useState<Colaborador[]>([]);
   const [documentos, setDocumentos] = useState<{ [key: string]: Documento[] }>({});
   const [modalVisible, setModalVisible] = useState(false);
+  const [editModalState, setEditModalState] = useState<EditDocumentState>({
+    visible: false,
+    documento: null,
+    colaboradorId: ''
+  });
   const [selectedColaborador, setSelectedColaborador] = useState<string>('');
   const [form] = Form.useForm();
+  const [editForm] = Form.useForm();
   const [loading, setLoading] = useState(false);
 
   const fetchColaboradores = async () => {
@@ -131,6 +143,44 @@ const Papeleria: React.FC = () => {
     }
   };
 
+  const handleEditDocument = async (values: any) => {
+    try {
+      setLoading(true);
+      const formData = new FormData();
+      
+      // Si hay un nuevo archivo
+      if (values.documento && values.documento[0]) {
+        const file = values.documento[0].originFileObj;
+        formData.append('documento', file);
+      }
+
+      formData.append('nombre', values.nombre);
+      if (values.fechaVencimiento) {
+        formData.append('fechaVencimiento', values.fechaVencimiento.toISOString());
+      }
+
+      await axios.put(
+        `http://localhost:6051/api/documentos/${editModalState.documento?._id}`, 
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      );
+
+      message.success('Documento actualizado correctamente');
+      fetchDocumentos(editModalState.colaboradorId);
+      setEditModalState({ visible: false, documento: null, colaboradorId: '' });
+      editForm.resetFields();
+    } catch (error: any) {
+      console.error('Error al actualizar documento:', error);
+      message.error(error.response?.data?.message || error.message || 'Error al actualizar documento');
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   return (
     <div style={{ padding: '20px' }}>
@@ -179,12 +229,31 @@ const Papeleria: React.FC = () => {
                     size="small"
                     title={doc.nombre}
                     extra={
-                      <Tooltip title="Eliminar">
-                        <DeleteOutlined 
-                          onClick={() => handleDeleteDocument(doc._id, colaborador._id)}
-                          style={{ color: 'red' }}
-                        />
-                      </Tooltip>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <Tooltip title="Editar">
+                          <Button
+                            type="text"
+                            icon={<EditOutlined />}
+                            onClick={() => {
+                              setEditModalState({
+                                visible: true,
+                                documento: doc,
+                                colaboradorId: colaborador._id
+                              });
+                              editForm.setFieldsValue({
+                                nombre: doc.nombre,
+                                fechaVencimiento: doc.fechaVencimiento ? moment(doc.fechaVencimiento) : undefined
+                              });
+                            }}
+                          />
+                        </Tooltip>
+                        <Tooltip title="Eliminar">
+                          <DeleteOutlined 
+                            onClick={() => handleDeleteDocument(doc._id, colaborador._id)}
+                            style={{ color: 'red' }}
+                          />
+                        </Tooltip>
+                      </div>
                     }
                   >
                     <p>
@@ -292,6 +361,69 @@ const Papeleria: React.FC = () => {
           <Form.Item>
             <Button type="primary" htmlType="submit" loading={loading} block>
               Guardar
+            </Button>
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title="Editar Documento"
+        open={editModalState.visible}
+        onCancel={() => {
+          setEditModalState({ visible: false, documento: null, colaboradorId: '' });
+          editForm.resetFields();
+        }}
+        footer={null}
+      >
+        <Form
+          form={editForm}
+          layout="vertical"
+          onFinish={handleEditDocument}
+        >
+          <Form.Item
+            name="nombre"
+            label="Nombre del documento"
+            rules={[{ required: true, message: 'Por favor ingresa un nombre' }]}
+          >
+            <input type="text" className="ant-input" />
+          </Form.Item>
+
+          <Form.Item
+            name="documento"
+            label="Documento (opcional)"
+            valuePropName="fileList"
+            getValueFromEvent={(e) => {
+              if (Array.isArray(e)) {
+                return e;
+              }
+              return e?.fileList;
+            }}
+          >
+            <Upload.Dragger
+              name="documento"
+              beforeUpload={() => false}
+              accept=".pdf,.jpg,.jpeg,.png,.gif,.webp"
+              maxCount={1}
+              listType="picture"
+            >
+              <p className="ant-upload-drag-icon">
+                <PlusOutlined />
+              </p>
+              <p className="ant-upload-text">Haz clic o arrastra un archivo aquí para reemplazarlo</p>
+              <p className="ant-upload-hint">Soporta PDF e imágenes</p>
+            </Upload.Dragger>
+          </Form.Item>
+
+          <Form.Item
+            name="fechaVencimiento"
+            label="Fecha de vencimiento (opcional)"
+          >
+            <DatePicker style={{ width: '100%' }} />
+          </Form.Item>
+
+          <Form.Item>
+            <Button type="primary" htmlType="submit" loading={loading} block>
+              Actualizar
             </Button>
           </Form.Item>
         </Form>

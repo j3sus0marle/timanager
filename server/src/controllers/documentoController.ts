@@ -104,6 +104,46 @@ export const verDocumento = async (req: Request, res: Response) => {
   }
 };
 
+export const updateDocumento = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { nombre, fechaVencimiento } = req.body;
+    
+    // Buscar el documento existente
+    const documento = await Documento.findById(id);
+    if (!documento) {
+      return res.status(404).json({ error: 'Documento no encontrado' });
+    }
+
+    // Si hay un nuevo archivo
+    if (req.file) {
+      // Eliminar el archivo anterior
+      const oldFilePath = path.resolve(__dirname, '../../uploads/documentos', documento.url);
+      try {
+        if (fs.existsSync(oldFilePath)) {
+          fs.unlinkSync(oldFilePath);
+        }
+      } catch (error) {
+        console.error('Error al eliminar archivo anterior:', error);
+      }
+
+      // Actualizar con el nuevo archivo
+      documento.url = req.file.filename;
+      documento.tipo = req.file.mimetype.startsWith('application/pdf') ? 'pdf' : 'image';
+    }
+
+    // Actualizar los metadatos
+    if (nombre) documento.nombre = nombre;
+    if (fechaVencimiento) documento.fechaVencimiento = new Date(fechaVencimiento);
+
+    await documento.save();
+    res.json(documento);
+  } catch (err) {
+    console.error('Error al actualizar documento:', err);
+    res.status(400).json({ error: 'Error al actualizar documento' });
+  }
+};
+
 export const deleteDocumento = async (req: Request, res: Response) => {
   try {
     const documento = await Documento.findById(req.params.id);

@@ -7,7 +7,8 @@ import {
   getAllDocumentos,
   createDocumento, 
   deleteDocumento,
-  verDocumento
+  verDocumento,
+  updateDocumento
 } from '../controllers/documentoController';
 
 const router = Router();
@@ -56,6 +57,7 @@ router.get('/', asyncHandler(getAllDocumentos));
 router.get('/colaborador/:colaboradorId', asyncHandler(getDocumentosByColaborador));
 router.get('/ver/:nombre', asyncHandler(verDocumento));
 router.post('/', upload.single('documento'), asyncHandler(createDocumento));
+router.put('/:id', upload.single('documento'), asyncHandler(updateDocumento));
 router.delete('/:id', asyncHandler(deleteDocumento));
 
 export default router;
