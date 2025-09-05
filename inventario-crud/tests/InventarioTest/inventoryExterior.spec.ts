@@ -1,7 +1,23 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+
+// @ts-ignore
+const USER = process.env.TEST_USER;
+// @ts-ignore
+const PASS = process.env.TEST_PASS;
+/*
+if (!USER || !PASS) {
+  throw new Error('TEST_USER and TEST_PASS environment variables must be set');
+}*/
 
 test('CRUD de inventario exterior', async ({ page }) => {
-  // Cambia la URL y ruta según tu frontend
+  // Login antes de acceder a inventario exterior
+  await page.goto('http://localhost/login');
+  await page.getByPlaceholder('Usuario').fill(USER);
+  await page.getByPlaceholder('Contraseña').fill(PASS);
+  await page.getByRole('button', { name: /Entrar/i }).click();
+  await page.waitForURL('**/dashboard', { timeout: 10000 }).catch(() => {});
+
+  // Ahora navega a inventario exterior
   await page.goto('http://localhost/inventarioExterior');
   await page.waitForLoadState('networkidle');
 
@@ -47,7 +63,6 @@ test('CRUD de inventario exterior', async ({ page }) => {
   await expect(rowEdit.locator('td')).toContainText(['MarcaTestExteriorEditada', 'ModeloTestExterior', 'Artículo de prueba exterior']);
 
   // Eliminar artículo
-  // Intercepta el diálogo de confirmación y acepta
   page.once('dialog', async (dialog) => {
     expect(dialog.type()).toBe('confirm');
     expect(dialog.message()).toMatch(/¿Estás seguro de que deseas eliminar este artículo?/);

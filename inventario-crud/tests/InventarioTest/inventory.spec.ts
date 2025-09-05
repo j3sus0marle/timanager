@@ -1,13 +1,13 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 // @ts-ignore
 const USER = process.env.TEST_USER;
 // @ts-ignore
 const PASS = process.env.TEST_PASS;
-
+/*
 if (!USER || !PASS) {
   throw new Error('TEST_USER and TEST_PASS environment variables must be set');
-}
+}*/
 
 test('CRUD de inventario', async ({ page }) => {
   // Login antes de acceder a inventario
