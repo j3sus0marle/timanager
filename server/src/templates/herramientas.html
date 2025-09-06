@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Acta de Entrega de Equipo y Herramienta</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            font-size: 13px;
+        }
+        .logo {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .logo img {
+            max-width: 200px;
+            height: auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 8px;
+        }
+        .title {
+            font-size: 20px;
+            font-weight: bold;
+            margin: 8px 0;
+        }
+        .date {
+            font-size: 13px;
+            color: #333;
+            margin: 8px 0;
+            text-align: right;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 6px;
+            text-align: left;
+            font-size: 12px;
+        }
+        th {
+            background-color: #f5f5f5;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .intro-text {
+            margin: 15px 0;
+            text-align: justify;
+            line-height: 1.6;
+        }
+        .post-table-text {
+            margin: 20px 0;
+            text-align: justify;
+            line-height: 1.6;
+        }
+        .atentamente {
+            margin: 15px 0;
+            text-align: center;
+            font-weight: bold;
+        }
+        .firma {
+            margin-top: 40px;
+            text-align: center;
+        }
+        .firma-linea {
+            width: 250px;
+            border-top: 1px solid #333;
+            margin: 10px auto;
+        }
+        .firma-nombre {
+            font-weight: bold;
+            font-size: 13px;
+        }
+        .firma-cargo {
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="date">Mexicali, Baja California a {{fecha}}</div>
+    
+    <div class="logo">
+        <img src="{{logoPath}}" alt="TI SERVICES Logo">
+    </div>
+
+    <div class="header">
+        <div class="title">ACTA DE ENTREGA DE EQUIPO Y HERRAMIENTA</div>
+    </div>
+
+    <div class="intro-text">
+        Yo, <strong>{{nombreColaborador}}</strong> declaro haber recibido el equipo y herramienta que a continuación se enlista, y me comprometo a cuidarlo y utilizarlo correctamente de acuerdo a las actividades que me sean asignadas. Así como, a devolverlo cuando se me indique, sin ninguna excepción.
+        <br><br>
+        Así mismo, estoy consciente que dicho equipo y herramienta es prestado y es de uso exclusivo de TI SERVICES, y será utilizado únicamente para fines laborales, en proyectos y trabajos que le correspondan a la empresa.
+        <br><br>
+        Lo anterior cumpliendo de acuerdo al Reglamento Interior de Trabajo capítulo XVI fracciones VI, VII y VIII.
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Marca</th>
+                <th>Modelo</th>
+                <th>Número de Serie</th>
+                <th>Valor</th>
+                <th>Fecha de Asignación</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#each herramientas}}
+            <tr>
+                <td>{{nombre}}</td>
+                <td>{{marca}}</td>
+                <td>{{modelo}}</td>
+                <td>{{serialNumber}}</td>
+                <td>${{valor}}</td>
+                <td>{{fechaAsignacion}}</td>
+            </tr>
+            {{/each}}
+        </tbody>
+    </table>
+
+    <div class="post-table-text">
+        Teniendo en cuenta esta acta de entrega, me hago responsable en caso de pérdida y/o deterioro del equipo y herramienta, y estoy de acuerdo en que estoy obligado a reponer o reemplazar cualquier cosa que se dañara o faltara, según el patrón me lo indique.
+    </div>
+
+    <div class="atentamente">ATENTAMENTE</div>
+
+    <div class="firma">
+        <div class="firma-linea"></div>
+        <div class="firma-nombre">{{nombreColaborador}}</div>
+        <div class="firma-cargo">Colaborador TI SERVICES</div>
+        <div class="firma-cargo">ID: {{numeroEmpleado}}</div>
+    </div>
+</body>
+</html>

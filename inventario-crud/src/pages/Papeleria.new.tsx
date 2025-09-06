@@ -241,7 +241,7 @@ const Papeleria: React.FC = () => {
 
   return (
     <div style={{ padding: '20px' }}>
-      <h1>Papelería</h1>
+      <h1>Documentos</h1>
       <div style={{ marginTop: '20px' }}>
         <Collapse onChange={handlePanelChange}>
           {colaboradores.map(colaborador => (

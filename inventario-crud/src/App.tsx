@@ -17,6 +17,7 @@ import InventarioExterior from "./pages/InventarioExterior";
 import Guias from "./pages/Guias";
 import Colaboradores from "./pages/Colaboradores";
 import Papeleria from "./pages/Papeleria";
+import Herramientas from "./pages/Herramientas";
 import Login from "./components/Login";
 import Register from "./components/Register";
 import UsuarioConfig from "./pages/UsuarioConfig";
@@ -194,6 +195,7 @@ function App() {
           <Route path="guias" element={<Guias />} />
           <Route path="colaboradores" element={<Colaboradores />} />
           <Route path="papeleria" element={<Papeleria />} />
+          <Route path="herramientas" element={<Herramientas />} />
           <Route path="/usuario" element={<UsuarioConfig username={username || ''} onUpdate={handleUpdateUser} />} />
 
         </Route>
