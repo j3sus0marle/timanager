@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, Button, Collapse, Modal, Form, DatePicker, message, Upload, Tooltip } from 'antd';
+import { FaUsers } from 'react-icons/fa';
 import { PlusOutlined, DeleteOutlined, FileOutlined, PictureOutlined, EditOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import moment from 'moment';
@@ -182,9 +184,20 @@ const Papeleria: React.FC = () => {
   };
 
 
+  const navigate = useNavigate();
+
   return (
     <div style={{ padding: '20px' }}>
-      <h1>Papelería</h1>
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h1>Documentos</h1>
+        <button
+          className="btn btn-warning d-flex align-items-center gap-2"
+          onClick={() => navigate('/colaboradores')}
+        >
+          <FaUsers />
+          Volver a Colaboradores
+        </button>
+      </div>
       <div style={{ marginTop: '20px' }}>
         <Collapse
           onChange={handlePanelChange}
