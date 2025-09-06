@@ -4,7 +4,8 @@ import {
   getHerramientasByColaborador,
   createHerramienta,
   updateHerramienta,
-  deleteHerramienta
+  deleteHerramienta,
+  generateHerramientasPDF
 } from '../controllers/herramientaController';
 
 const router: Router = express.Router();
@@ -14,5 +15,6 @@ router.get('/colaborador/:colaboradorId', getHerramientasByColaborador as expres
 router.post('/', createHerramienta as express.RequestHandler);
 router.put('/:id', updateHerramienta as express.RequestHandler);
 router.delete('/:id', deleteHerramienta as express.RequestHandler);
+router.get('/pdf/:colaboradorId', generateHerramientasPDF as express.RequestHandler);
 
 export default router;

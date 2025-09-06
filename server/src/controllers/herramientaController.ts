@@ -1,5 +1,10 @@
 import { Request, Response } from 'express';
 import Herramienta, { IHerramienta } from '../models/Herramienta';
+import { generatePDF } from '../services/herramientasPdfGenerator';
+import path from 'path';
+import fs from 'fs';
+import mongoose from 'mongoose';
+import { IColaborador } from '../models/Colaborador';
 
 // Obtener todas las herramientas
 export const getHerramientas = async (req: Request, res: Response) => {
@@ -102,5 +107,80 @@ export const deleteHerramienta = async (req: Request, res: Response) => {
     res.json({ message: 'Herramienta eliminada correctamente' });
   } catch (error) {
     res.status(500).json({ message: 'Error al eliminar herramienta', error });
+  }
+};
+
+// Generar PDF de inventario de herramientas
+export const generateHerramientasPDF = async (req: Request, res: Response) => {
+  try {
+    const { colaboradorId } = req.params;
+
+    // Verificar que el ID sea válido
+    if (!mongoose.Types.ObjectId.isValid(colaboradorId)) {
+      return res.status(400).json({ message: 'ID de colaborador inválido' });
+    }
+
+    // Obtener las herramientas del colaborador
+    const herramientas = await Herramienta.find({ 
+      colaboradorId,
+      activo: true 
+    }).lean();
+
+    // Obtener información del colaborador
+    const Colaborador = mongoose.model<IColaborador>('Colaborador');
+    const colaborador = await Colaborador.findById(colaboradorId).lean() as IColaborador;
+
+    if (!colaborador) {
+      return res.status(404).json({ message: 'Colaborador no encontrado' });
+    }
+
+    // Preparar los datos para el template
+    const fecha = new Date();
+    const dia = fecha.getDate().toString().padStart(2, '0');
+    const mes = fecha.toLocaleString('es-MX', { month: 'long' });
+    const año = fecha.getFullYear();
+    
+    // Convertir el logo a base64 para incluirlo en el PDF
+    const logoPath = path.join(process.cwd(), '..', 'inventario-crud', 'src', 'templates', 'img', 'logo.png');
+    console.log('Buscando logo en:', logoPath);
+    let logoBase64 = '';
+    
+    try {
+      if (fs.existsSync(logoPath)) {
+        const logoBuffer = fs.readFileSync(logoPath);
+        logoBase64 = `data:image/png;base64,${logoBuffer.toString('base64')}`;
+        console.log('Logo cargado correctamente');
+      } else {
+        console.warn('No se encontró el archivo del logo en:', logoPath);
+      }
+    } catch (error) {
+      console.warn('No se pudo cargar el logo:', error);
+    }
+    
+    const templateData = {
+      fecha: `${dia} de ${mes} del ${año}`,
+      logoPath: logoBase64,
+      nombreColaborador: colaborador.nombre,
+      numeroEmpleado: colaborador.numeroEmpleado,
+      herramientas: herramientas.map(h => ({
+        ...h,
+        valor: h.valor.toFixed(2),
+        fechaAsignacion: new Date(h.fechaAsignacion).toLocaleDateString('es-MX')
+      }))
+    };
+
+    // Generar el PDF
+    const templatePath = path.join(__dirname, '../templates/herramientas.html');
+    const pdfBuffer = await generatePDF(templatePath, templateData);
+
+    // Configurar headers para la descarga
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename=herramientas-${colaborador.numeroEmpleado}.pdf`);
+
+    // Enviar el PDF
+    res.send(pdfBuffer);
+  } catch (error) {
+    console.error('Error al generar PDF:', error);
+    res.status(500).json({ message: 'Error al generar el PDF de herramientas' });
   }
 };

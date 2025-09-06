@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card, Button, Modal, Form, Input, InputNumber, message } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, FilePdfOutlined } from '@ant-design/icons';
 import axios from 'axios';
 
 interface Herramienta {
@@ -73,18 +73,28 @@ const HerramientaList: React.FC<HerramientaListProps> = ({
 
   return (
     <div>
-      <Button
-        type="primary"
-        icon={<PlusOutlined />}
-        onClick={() => {
-          setEditingHerramienta(null);
-          form.resetFields();
-          setModalVisible(true);
-        }}
-        style={{ marginBottom: 16 }}
-      >
-        Agregar Herramienta
-      </Button>
+      <div style={{ display: 'flex', gap: '10px', marginBottom: 16 }}>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={() => {
+            setEditingHerramienta(null);
+            form.resetFields();
+            setModalVisible(true);
+          }}
+        >
+          Agregar Herramienta
+        </Button>
+        <Button
+          type="default"
+          icon={<FilePdfOutlined />}
+          onClick={() => {
+            window.open(`http://localhost:6051/api/herramientas/pdf/${colaboradorId}`, '_blank');
+          }}
+        >
+          Exportar PDF
+        </Button>
+      </div>
 
       <Card
         size="small"
