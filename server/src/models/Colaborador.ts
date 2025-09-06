@@ -50,11 +50,20 @@ const ColaboradorSchema: Schema = new Schema({
   timestamps: true // Añade createdAt y updatedAt
 });
 
-// Middleware para generar número de empleado automáticamente
+// Middleware para generar número de empleado automáticamente usando un contador independiente
 ColaboradorSchema.pre('save', async function(next) {
   if (this.isNew) {
-    const count = await mongoose.model('Colaborador').countDocuments();
-    this.numeroEmpleado = count + 1;
+    const Counter = mongoose.model('Counter');
+    
+    // Obtener y actualizar el contador en una sola operación atómica
+    const counter = await Counter.findOneAndUpdate(
+      { _id: 'empleadoId' },
+      { $inc: { sequence_value: 1 } },
+      { new: true, upsert: true } // new: true retorna el documento actualizado, upsert: true lo crea si no existe
+    );
+    
+    // Asignar el nuevo número de empleado
+    this.numeroEmpleado = counter.sequence_value;
   }
   next();
 });

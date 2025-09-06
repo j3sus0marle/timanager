@@ -4,6 +4,10 @@ import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
 
+// Importar todos los modelos para asegurar que estén registrados
+import './models/Counter';
+import './models/Colaborador';
+
 import itemRoutes from "./routes/itemRoutes";
 import vendedoresRoutes from './routes/vendedores'
 import materialCanalizacionRoutes from './routes/materialCanalizacion'
