@@ -17,7 +17,8 @@ import {
   FaFileAlt, 
   FaShoppingCart,
   FaTruck,
-  FaBuilding
+  FaBuilding,
+  FaTools
 } from "react-icons/fa";
 
 const MainLayout: React.FC<{ username?: string | null, onLogout?: () => void }> = ({ username, onLogout }) => {
@@ -74,6 +75,7 @@ const MainLayout: React.FC<{ username?: string | null, onLogout?: () => void }> 
       items: [
         { path: "/inventario", label: "Inventario Interior", icon: <FaWarehouse size={14} /> },
         { path: "/inventarioExterior", label: "Inventario Exterior", icon: <FaWarehouse size={14} /> },
+        { path: "/herramientas", label: "Herramientas", icon: <FaTools size={14} /> },
       ],
     },
     {

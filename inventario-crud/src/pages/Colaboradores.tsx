@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import ColaboradorList from '../components/colaboradores/ColaboradorList';
-import { FaFileAlt, FaTools } from 'react-icons/fa';
+import { FaFileAlt } from 'react-icons/fa';
 
 const Colaboradores: React.FC = () => {
   const navigate = useNavigate();
@@ -17,13 +17,6 @@ const Colaboradores: React.FC = () => {
           >
             <FaFileAlt />
             Documentos
-          </button>
-          <button
-            className="btn btn-warning d-flex align-items-center gap-2"
-            onClick={() => navigate('/herramientas')}
-          >
-            <FaTools />
-            Herramientas
           </button>
         </div>
       </div>

@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Collapse, message } from 'antd';
 import axios from 'axios';
 import HerramientaList from '../components/colaboradores/HerramientaList';
-import { FaUsers } from 'react-icons/fa';
 
 interface Colaborador {
   _id: string;
@@ -25,7 +23,6 @@ interface Herramienta {
 const Herramientas: React.FC = () => {
   const [colaboradores, setColaboradores] = useState<Colaborador[]>([]);
   const [herramientas, setHerramientas] = useState<{ [key: string]: Herramienta[] }>({});
-  const navigate = useNavigate();
 
   const fetchColaboradores = async () => {
     try {
@@ -72,15 +69,8 @@ const Herramientas: React.FC = () => {
 
   return (
     <div style={{ padding: '20px' }}>
-      <div className="d-flex justify-content-between align-items-center mb-4">
+      <div className="mb-4">
         <h1>Herramientas</h1>
-        <button
-          className="btn btn-warning d-flex align-items-center gap-2"
-          onClick={() => navigate('/colaboradores')}
-        >
-          <FaUsers />
-          Volver a Colaboradores
-        </button>
       </div>
 
       <div style={{ marginTop: '20px' }}>
