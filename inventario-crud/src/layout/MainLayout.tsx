@@ -50,14 +50,6 @@ const MainLayout: React.FC<{ username?: string | null, onLogout?: () => void }> 
         { path: "/dashboard", label: "Dashboard", icon: <FaTachometerAlt size={14} /> },
       ],
     },
-    // Colaboradores sin agrupar
-    {
-      label: "Colaboradores",
-      icon: <FaUsers size={16} />,
-      items: [
-        { path: "/colaboradores", label: "Colaboradores", icon: <FaUsers size={14} /> },
-      ],
-    },
     // Guías sin agrupar
     {
       label: "Guías",
@@ -96,6 +88,7 @@ const MainLayout: React.FC<{ username?: string | null, onLogout?: () => void }> 
       label: "Bases de Datos",
       icon: <FaUsers size={16} />,
       items: [
+        { path: "/colaboradores", label: "Colaboradores", icon: <FaUsers size={14} /> },
         { path: "/clientes", label: "Clientes", icon: <FaUsers size={14} /> },
         { path: "/proveedores", label: "Proveedores", icon: <FaTruck size={14} /> },
         { path: "/razones-sociales", label: "Razones Sociales", icon: <FaBuilding size={14} /> },
