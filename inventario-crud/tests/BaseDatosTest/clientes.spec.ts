@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test';
 
 // @ts-ignore
-const USER = process.env.TEST_USER;
+const USER = process.env.TEST_USER || 'oleal';
 // @ts-ignore
-const PASS = process.env.TEST_PASS;
+const PASS = process.env.TEST_PASS || 'papus';
 
 test('CRUD de clientes', async ({ page }) => {
   // Login antes de acceder a clientes
@@ -22,20 +22,26 @@ test('CRUD de clientes', async ({ page }) => {
   await expect(addButton).toBeVisible({ timeout: 10000 });
   await addButton.click();
 
-  // Llenar campos por label y placeholder reales
-  await page.getByLabel('Empresa').fill('Empresa Test');
-  await page.getByLabel('Dirección').fill('Dirección Test');
-  await page.getByLabel('Teléfono').fill('5551234567');
+  // Espera el modal
+  const modal = page.getByRole('dialog');
+  await expect(modal).toBeVisible({ timeout: 10000 });
+
+  // Llenar campos del cliente
+  await modal.getByLabel('Empresa').fill('Empresa Test');
+  await modal.getByLabel('Dirección').fill('Dirección Test');
+  await modal.getByLabel('Teléfono', { exact: true }).first().fill('5551234567'); // Teléfono empresa
+
   // Contacto principal
-  await page.getByPlaceholder('Nombre').fill('Contacto Test');
-  await page.getByPlaceholder('Puesto').fill('Gerente');
-  await page.getByPlaceholder('Correo').fill('contacto@test.com');
-  await page.getByPlaceholder('Teléfono').fill('5559876543');
-  await page.getByPlaceholder('Ext').fill('101');
-  await page.getByRole('button', { name: /Guardar/i }).click();
+  await modal.getByLabel('Nombre').fill('Contacto Test');
+  await modal.getByLabel('Puesto').fill('Gerente');
+  await modal.getByLabel('Correo').fill('contacto@test.com');
+  await modal.getByLabel('Teléfono').nth(1).fill('5559876543'); // Teléfono contacto
+  await modal.getByLabel('Ext').fill('101');
+
+  await modal.getByRole('button', { name: /Guardar/i }).click();
 
   // Espera a que desaparezca el modal antes de buscar en la lista
-  await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 10000 });
+  await expect(modal).not.toBeVisible({ timeout: 10000 });
 
   // Usa la barra de búsqueda para filtrar por la empresa
   const searchBar = page.getByPlaceholder('Buscar por empresa, dirección o contacto...');
@@ -48,16 +54,20 @@ test('CRUD de clientes', async ({ page }) => {
 
   // Editar cliente
   await row.getByRole('button', { name: /Editar/i }).click();
-  await page.getByLabel('Empresa').fill('Empresa Editada');
-  await page.getByLabel('Dirección').fill('Dirección Editada');
-  await page.getByLabel('Teléfono').fill('5557654321');
-  await page.getByPlaceholder('Nombre').fill('Contacto Editado');
-  await page.getByPlaceholder('Puesto').fill('Director');
-  await page.getByPlaceholder('Correo').fill('editado@test.com');
-  await page.getByPlaceholder('Teléfono').fill('5551112222');
-  await page.getByPlaceholder('Ext').fill('202');
-  await page.getByRole('button', { name: /Guardar/i }).click();
-  await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 10000 });
+  await expect(modal).toBeVisible({ timeout: 10000 });
+
+  await modal.getByLabel('Empresa').fill('Empresa Editada');
+  await modal.getByLabel('Dirección').fill('Dirección Editada');
+  await modal.getByLabel('Teléfono', { exact: true }).first().fill('5557654321'); // Teléfono empresa editado
+
+  await modal.getByLabel('Nombre').fill('Contacto Editado');
+  await modal.getByLabel('Puesto').fill('Director');
+  await modal.getByLabel('Correo').fill('editado@test.com');
+  await modal.getByLabel('Teléfono').nth(1).fill('5551112222'); // Teléfono contacto editado
+  await modal.getByLabel('Ext').fill('202');
+
+  await modal.getByRole('button', { name: /Guardar/i }).click();
+  await expect(modal).not.toBeVisible({ timeout: 10000 });
 
   // Filtra por la empresa editada
   await searchBar.fill('Empresa Editada');

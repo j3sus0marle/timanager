@@ -1,9 +1,10 @@
 import { expect, test } from '@playwright/test';
 
 // @ts-ignore
-const USER = process.env.TEST_USER;
+const USER = process.env.TEST_USER || 'oleal';
 // @ts-ignore
-const PASS = process.env.TEST_PASS;
+const PASS = process.env.TEST_PASS || 'papus';
+
 /*
 if (!USER || !PASS) {
   throw new Error('TEST_USER and TEST_PASS environment variables must be set');
