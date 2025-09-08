@@ -103,4 +103,11 @@ test("CRUD de Orden de Compra", async ({ page }) => {
 
   // --- Verificar que ya no existe ---
   await expect(page.getByRole("cell", { name: /SYSCOM/i })).not.toBeVisible();
+
+  // --- Descargar PDF generado (si existe un botón/enlace de descarga) ---
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    page.getByRole('button', { name: /Descargar PDF/i }).click(), // Ajusta el selector según tu UI
+  ]);
+  await download.saveAs('orden-compra-descargada.pdf');
 });

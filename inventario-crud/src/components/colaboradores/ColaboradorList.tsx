@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Button, Modal, Form, Row, Col, Image } from 'react-bootstrap';
-import DataTable, { DataTableColumn } from '../common/DataTable';
-import SearchBar from '../common/SearchBar';
-import PaginationCompact from '../common/PaginationCompact';
 import { format } from 'date-fns';
+import React, { useEffect, useState } from 'react';
+import { Button, Col, Form, Image, Modal, Row } from 'react-bootstrap';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import DataTable, { DataTableColumn } from '../common/DataTable';
+import PaginationCompact from '../common/PaginationCompact';
+import SearchBar from '../common/SearchBar';
 import './Colaboradores.css';
 
 interface RazonSocial {
@@ -467,100 +467,118 @@ const ColaboradorList: React.FC = () => {
           <Form>
             <Row className="mb-3">
               <Col md={6}>
-                <Form.Label>Nombre</Form.Label>
-                <Form.Control 
-                  type="text" 
-                  value={newColaborador.nombre} 
-                  onChange={e => setNewColaborador({ ...newColaborador, nombre: e.target.value })}
-                  required
-                />
+                <Form.Group controlId="nombre">
+                  <Form.Label>Nombre</Form.Label>
+                  <Form.Control 
+                    id="nombre"
+                    type="text" 
+                    value={newColaborador.nombre} 
+                    onChange={e => setNewColaborador({ ...newColaborador, nombre: e.target.value })}
+                    required
+                  />
+                </Form.Group>
               </Col>
               <Col md={6}>
-                <Form.Label>NSS</Form.Label>
-                <Form.Control 
-                  type="text" 
-                  inputMode="numeric"
-                  pattern="\d{11}"
-                  value={newColaborador.nss} 
-                  onChange={e => {
-                    const value = parseNSS(e.target.value);
-                    setNewColaborador(prev => ({ ...prev, nss: value }));
-                  }}
-                  onPaste={e => {
-                    e.preventDefault();
-                    const value = parseNSS(e.clipboardData.getData('text'));
-                    setNewColaborador(prev => ({ ...prev, nss: value }));
-                  }}
-                  onKeyPress={e => {
-                    // Permitir solo dígitos y limitar a 11
-                    if (!/\d/.test(e.key) || (newColaborador.nss.length >= 11 && e.key !== 'Backspace')) {
+                <Form.Group controlId="nss">
+                  <Form.Label>NSS</Form.Label>
+                  <Form.Control 
+                    id="nss"
+                    type="text" 
+                    inputMode="numeric"
+                    pattern="\d{11}"
+                    value={newColaborador.nss} 
+                    onChange={e => {
+                      const value = parseNSS(e.target.value);
+                      setNewColaborador(prev => ({ ...prev, nss: value }));
+                    }}
+                    onPaste={e => {
                       e.preventDefault();
+                      const value = parseNSS(e.clipboardData.getData('text'));
+                      setNewColaborador(prev => ({ ...prev, nss: value }));
+                    }}
+                    onKeyPress={e => {
+                      // Permitir solo dígitos y limitar a 11
+                      if (!/\d/.test(e.key) || (newColaborador.nss.length >= 11 && e.key !== 'Backspace')) {
+                        e.preventDefault();
+                      }
+                    }}
+                    maxLength={11}
+                    placeholder="11 dígitos numéricos"
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+            <Row>
+              <Col md={6} className="mb-3">
+                <Form.Group controlId="puesto">
+                  <Form.Label>Puesto</Form.Label>
+                  <Form.Control 
+                    id="puesto"
+                    type="text" 
+                    value={newColaborador.puesto} 
+                    onChange={e => setNewColaborador({ ...newColaborador, puesto: e.target.value })}
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6} className="mb-3">
+                <Form.Group controlId="fechaAltaIMSS">
+                  <Form.Label>Fecha Alta IMSS</Form.Label>
+                  <Form.Control 
+                    id="fechaAltaIMSS"
+                    type="date" 
+                    value={typeof newColaborador.fechaAltaIMSS === 'string' ? newColaborador.fechaAltaIMSS : format(newColaborador.fechaAltaIMSS, 'yyyy-MM-dd')} 
+                    onChange={e => setNewColaborador({ ...newColaborador, fechaAltaIMSS: e.target.value })}
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+            <Row>
+              <Col md={6} className="mb-3">
+                <Form.Group controlId="razonSocialId">
+                  <Form.Label>Razón Social</Form.Label>
+                  <Form.Select 
+                    id="razonSocialId"
+                    value={typeof newColaborador.razonSocialId === 'string' 
+                      ? newColaborador.razonSocialId 
+                      : newColaborador.razonSocialId._id
                     }
-                  }}
-                  maxLength={11}
-                  placeholder="11 dígitos numéricos"
-                />
-              </Col>
-            </Row>
-            <Row>
-              <Col md={6} className="mb-3">
-                <Form.Label>Puesto</Form.Label>
-                <Form.Control 
-                  type="text" 
-                  value={newColaborador.puesto} 
-                  onChange={e => setNewColaborador({ ...newColaborador, puesto: e.target.value })}
-                />
+                    onChange={e => setNewColaborador({ ...newColaborador, razonSocialId: e.target.value })}
+                  >
+                    <option value="">Seleccione una razón social</option>
+                    {razonesSociales.map(razon => (
+                      <option key={razon._id} value={razon._id}>
+                        {razon.nombre}
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
               </Col>
               <Col md={6} className="mb-3">
-                <Form.Label>Fecha Alta IMSS</Form.Label>
-                <Form.Control 
-                  type="date" 
-                  value={typeof newColaborador.fechaAltaIMSS === 'string' ? newColaborador.fechaAltaIMSS : format(newColaborador.fechaAltaIMSS, 'yyyy-MM-dd')} 
-                  onChange={e => setNewColaborador({ ...newColaborador, fechaAltaIMSS: e.target.value })}
-                />
-              </Col>
-            </Row>
-            <Row>
-              <Col md={6} className="mb-3">
-                <Form.Label>Razón Social</Form.Label>
-                <Form.Select 
-                  value={typeof newColaborador.razonSocialId === 'string' 
-                    ? newColaborador.razonSocialId 
-                    : newColaborador.razonSocialId._id
-                  }
-                  onChange={e => setNewColaborador({ ...newColaborador, razonSocialId: e.target.value })}
-                >
-                  <option value="">Seleccione una razón social</option>
-                  {razonesSociales.map(razon => (
-                    <option key={razon._id} value={razon._id}>
-                      {razon.nombre}
-                    </option>
-                  ))}
-                </Form.Select>
-              </Col>
-              <Col md={6} className="mb-3">
-                <Form.Label>Fotografía</Form.Label>
-                {editId && newColaborador.fotografia && (
-                  <div className="mb-2">
-                    <Image 
-                      src={`${urlServer.replace(/\/api\/?$/, '')}/api${newColaborador.fotografia}`} 
-                      alt="Foto actual" 
-                      style={{ width: '100px', height: '100px', objectFit: 'cover' }} 
-                      onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
-                        const target = e.target as HTMLImageElement;
-                        if (target.src !== `${window.location.origin}/test.png`) {
-                          target.src = '/test.png';
-                        }
-                      }}
-                      rounded 
-                    />
-                  </div>
-                )}
-                <Form.Control 
-                  type="file" 
-                  onChange={handleFileChange}
-                  accept="image/*"
-                />
+                <Form.Group controlId="fotografia">
+                  <Form.Label>Fotografía</Form.Label>
+                  {editId && newColaborador.fotografia && (
+                    <div className="mb-2">
+                      <Image 
+                        src={`${urlServer.replace(/\/api\/?$/, '')}/api${newColaborador.fotografia}`} 
+                        alt="Foto actual" 
+                        style={{ width: '100px', height: '100px', objectFit: 'cover' }} 
+                        onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                          const target = e.target as HTMLImageElement;
+                          if (target.src !== `${window.location.origin}/test.png`) {
+                            target.src = '/test.png';
+                          }
+                        }}
+                        rounded 
+                      />
+                    </div>
+                  )}
+                  <Form.Control 
+                    id="fotografia"
+                    type="file" 
+                    onChange={handleFileChange}
+                    accept="image/*"
+                  />
+                </Form.Group>
               </Col>
             </Row>
           </Form>
