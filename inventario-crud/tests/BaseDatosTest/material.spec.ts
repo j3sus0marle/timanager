@@ -48,10 +48,7 @@ test("CRUD de Material de Canalización", async ({ page }) => {
   const searchBar = page.getByPlaceholder("Buscar por tipo, material, medida o proveedor...");
   await searchBar.fill(tipo);
   await page.waitForTimeout(1200); // Espera para que la tabla se actualice
-  await page.screenshot({ path: `tabla-materiales-${unique}.png` });
-  // Logging temporal del contenido de la tabla
-  const tablaHtml = await page.locator('table').innerHTML();
-  console.log('Contenido tabla:', tablaHtml);
+  // (debug logging removed)
 
   // Buscar la fila por tipo y nombre (más robusto que usar el accessible name de la fila)
   const matches = page.locator('tbody tr').filter({ hasText: tipo }).filter({ hasText: nombre });
@@ -92,10 +89,15 @@ test("CRUD de Material de Canalización", async ({ page }) => {
   // ---- CONFIRMAR EDICIÓN ----
   await searchBar.fill(tipoEdit);
   await page.waitForTimeout(1200); // Espera para que la tabla se actualice
-  // Buscar la fila editada por todos los datos únicos
-  const rowEdit = page.getByRole("row", { name: new RegExp(`${tipoEdit}.*${nombreEdit}.*${medidaEdit}.*${unidadEdit}.*${proveedorEdit}.*\$${precioEdit}`) });
+
+  // (debug logging removed)
+
+  // Buscar la fila editada por tipo y nombre (método robusto, igual que en la fase de creación)
+  const matchesEdit = page.locator('tbody tr').filter({ hasText: tipoEdit }).filter({ hasText: nombreEdit });
+  await expect(matchesEdit).toHaveCount(1, { timeout: 15000 });
+  const rowEdit = matchesEdit.first();
   await expect(rowEdit).toBeVisible({ timeout: 15000 });
-  await expect(rowEdit.locator("td")).toContainText([
+  await expect(rowEdit.locator('td')).toContainText([
     tipoEdit,
     nombreEdit,
     medidaEdit,
