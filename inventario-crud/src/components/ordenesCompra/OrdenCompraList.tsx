@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
-import { Button } from "react-bootstrap";
+import axios from "axios";
+import { useEffect, useState } from "react";
+import { Alert, Button, Spinner } from "react-bootstrap";
 import { OrdenCompra } from "../../types";
-import OrdenCompraForm from "./OrdenCompraForm";
-import SearchBar from "../common/SearchBar";
 import DataTable, { DataTableColumn } from "../common/DataTable";
 import PaginationCompact from "../common/PaginationCompact";
-import axios from "axios";
+import SearchBar from "../common/SearchBar";
+import OrdenCompraForm from "./OrdenCompraForm";
 
 const OrdenCompraList: React.FC = () => {
   const [ordenesCompra, setOrdenesCompra] = useState<OrdenCompra[]>([]);
@@ -16,61 +16,43 @@ const OrdenCompraList: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const itemsPerPage = 10;
 
+  const itemsPerPage = 10;
   const urlServer = import.meta.env.VITE_API_URL;
 
-  // Cargar órdenes de compra desde la API
-  useEffect(() => {
-    const cargarOrdenes = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const response = await axios.get(`${urlServer}ordenes-compra/`);
-        const ordenes = response.data as OrdenCompra[];
-        setOrdenesCompra(ordenes);
-        setFilteredOrdenes(ordenes);
-      } catch (err) {
-        console.error('Error al cargar órdenes de compra:', err);
-        setError('Error al cargar las órdenes de compra');
-        setOrdenesCompra([]);
-        setFilteredOrdenes([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    cargarOrdenes();
-  }, [urlServer]);
-
-  // Función para recargar las órdenes (se puede llamar desde el formulario)
-  const recargarOrdenes = async () => {
+  // Cargar órdenes de compra
+  const fetchOrdenes = async () => {
     try {
       setLoading(true);
+      setError(null);
       const response = await axios.get(`${urlServer}ordenes-compra/`);
       const ordenes = response.data as OrdenCompra[];
       setOrdenesCompra(ordenes);
       setFilteredOrdenes(ordenes);
-    } catch (err) {
-      console.error('Error al recargar órdenes:', err);
+    } catch {
+      setError("Error al cargar las órdenes de compra");
+      setOrdenesCompra([]);
+      setFilteredOrdenes([]);
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => { fetchOrdenes(); }, []);
+
   const handleSearch = (value: string) => {
     setSearchTerm(value);
-    if (!value) {
-      setFilteredOrdenes(ordenesCompra);
-    } else {
-      const lower = value.toLowerCase();
-      setFilteredOrdenes(ordenesCompra.filter(orden =>
+    if (!value) return setFilteredOrdenes(ordenesCompra);
+
+    const lower = value.toLowerCase();
+    setFilteredOrdenes(
+      ordenesCompra.filter(orden =>
         orden.numeroOrden.toLowerCase().includes(lower) ||
         (orden.numeroCotizacion && orden.numeroCotizacion.toLowerCase().includes(lower)) ||
-        (typeof orden.proveedor === 'object' && orden.proveedor.empresa.toLowerCase().includes(lower)) ||
-        (typeof orden.razonSocial === 'object' && orden.razonSocial.nombre.toLowerCase().includes(lower))
-      ));
-    }
+        (typeof orden.proveedor === "object" && orden.proveedor.empresa.toLowerCase().includes(lower)) ||
+        (typeof orden.razonSocial === "object" && orden.razonSocial.nombre.toLowerCase().includes(lower))
+      )
+    );
   };
 
   const handleNew = () => {
@@ -84,15 +66,12 @@ const OrdenCompraList: React.FC = () => {
   };
 
   const handleDelete = async (orden: OrdenCompra) => {
-    if (!window.confirm("¿Está seguro de eliminar esta orden de compra?")) return;
-    
+    if (!window.confirm(`¿Está seguro de eliminar la orden #${orden.numeroOrden}?`)) return;
     try {
       await axios.delete(`${urlServer}ordenes-compra/${orden._id}`);
-      // Recargar la lista después de eliminar
-      await recargarOrdenes();
-    } catch (err) {
-      console.error('Error al eliminar orden:', err);
-      alert('Error al eliminar la orden de compra');
+      await fetchOrdenes();
+    } catch {
+      setError("Error al eliminar la orden de compra");
     }
   };
 
@@ -104,94 +83,46 @@ const OrdenCompraList: React.FC = () => {
   const handleSaveForm = async (orden: OrdenCompra) => {
     try {
       if (editId) {
-        // Editar orden existente
         await axios.put(`${urlServer}ordenes-compra/${editId}`, orden);
       } else {
-        // Crear nueva orden
         await axios.post(`${urlServer}ordenes-compra/`, orden);
       }
-      
       setShowModal(false);
       setEditId(null);
-      
-      // Recargar la lista después de guardar
-      await recargarOrdenes();
-      
-    } catch (err) {
-      console.error('Error al guardar orden:', err);
-      alert('Error al guardar la orden de compra');
+      await fetchOrdenes();
+    } catch {
+      setError("Error al guardar la orden de compra");
     }
   };
 
-  // Función para ver PDF
   const handleVerPdf = (orden: OrdenCompra) => {
-    if (!orden._id) {
-      alert('No se puede mostrar el PDF: ID de orden no válido');
-      return;
-    }
-    
-    if (!orden.rutaPdf) {
-      alert('No se ha generado PDF para esta orden de compra');
-      return;
-    }
-    
-    // Abrir PDF en nueva ventana
-    const url = `${urlServer}ordenes-compra/${orden._id}/pdf`;
-    window.open(url, '_blank');
+    if (!orden._id) return alert("ID de orden no válido");
+    if (!orden.rutaPdf) return alert("No se ha generado PDF para esta orden de compra");
+    window.open(`${urlServer}ordenes-compra/${orden._id}/pdf`, "_blank");
   };
 
-  // Función para descargar PDF
   const handleDescargarPdf = (orden: OrdenCompra) => {
-    if (!orden._id) {
-      alert('No se puede descargar el PDF: ID de orden no válido');
-      return;
-    }
-    
-    if (!orden.rutaPdf) {
-      alert('No se ha generado PDF para esta orden de compra');
-      return;
-    }
-    
-    // Descargar PDF
-    const url = `${urlServer}ordenes-compra/${orden._id}/pdf/descargar`;
-    window.open(url, '_blank');
+    if (!orden._id) return alert("ID de orden no válido");
+    if (!orden.rutaPdf) return alert("No se ha generado PDF para esta orden de compra");
+    window.open(`${urlServer}ordenes-compra/${orden._id}/pdf/descargar`, "_blank");
   };
 
-  // Columnas para la tabla
+  // Columnas de tabla
   const columns: DataTableColumn<OrdenCompra>[] = [
-    {
-      key: "numeroOrden",
-      label: "Número de Orden",
-    },
-    {
-      key: "numeroCotizacion",
-      label: "Número de Cotización",
-      render: (orden) => orden.numeroCotizacion || 'N/A',
-    },
-    {
-      key: "fecha",
-      label: "Fecha",
-      render: (orden) => new Date(orden.fecha).toLocaleDateString(),
-    },
-    {
-      key: "proveedor",
-      label: "Proveedor",
-      render: (orden) => typeof orden.proveedor === 'object' ? orden.proveedor.empresa : orden.proveedor,
-    },
-    {
-      key: "razonSocial",
-      label: "Razón Social",
-      render: (orden) => typeof orden.razonSocial === 'object' ? orden.razonSocial.nombre : orden.razonSocial,
-    },
+    { key: "numeroOrden", label: "Número de Orden" },
+    { key: "numeroCotizacion", label: "Número de Cotización", render: o => o.numeroCotizacion || "N/A" },
+    { key: "fecha", label: "Fecha", render: o => new Date(o.fecha).toLocaleDateString() },
+    { key: "proveedor", label: "Proveedor", render: o => typeof o.proveedor === "object" ? o.proveedor.empresa : o.proveedor },
+    { key: "razonSocial", label: "Razón Social", render: o => typeof o.razonSocial === "object" ? o.razonSocial.nombre : o.razonSocial },
   ];
 
   // Paginación
   const totalPages = Math.ceil(filteredOrdenes.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedOrdenes = filteredOrdenes.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedOrdenes = filteredOrdenes.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
     <div className="container-fluid mt-4 px-1 px-sm-3">
+      {/* Barra de búsqueda y botón nuevo */}
       <div className="d-flex flex-column flex-md-row justify-content-between align-items-stretch gap-2 mb-3">
         <SearchBar
           value={searchTerm}
@@ -199,26 +130,21 @@ const OrdenCompraList: React.FC = () => {
           placeholder="Buscar por número de orden, cotización, proveedor o razón social..."
           className="flex-grow-1"
         />
-        <Button variant="success" onClick={handleNew}>
+        <Button variant="success" id="nueva-orden" aria-label="Nueva Orden de Compra" onClick={handleNew}>
           Nueva Orden de Compra
         </Button>
       </div>
-      
+
+      {/* Mensajes de carga y error */}
       {loading && (
         <div className="text-center py-4">
-          <div className="spinner-border" role="status">
-            <span className="visually-hidden">Cargando...</span>
-          </div>
+          <Spinner animation="border" role="status" />
           <p className="mt-2">Cargando órdenes de compra...</p>
         </div>
       )}
-      
-      {error && (
-        <div className="alert alert-danger" role="alert">
-          {error}
-        </div>
-      )}
-      
+      {error && <Alert variant="danger">{error}</Alert>}
+
+      {/* Tabla */}
       {!loading && !error && (
         <>
           <div className="table-responsive" style={{ minHeight: `calc(100vh - 270px)`, maxHeight: `calc(100vh - 270px)`, overflowY: "auto", background: "#fff", borderRadius: 8, boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}>
@@ -227,67 +153,34 @@ const OrdenCompraList: React.FC = () => {
               columns={columns}
               actions={(orden) => (
                 <div className="d-flex flex-column flex-sm-row align-items-stretch gap-1">
-                  <Button
-                    variant="warning"
-                    size="sm"
-                    className="w-100 w-sm-auto"
-                    onClick={() => handleEdit(orden)}
-                  >
-                    Editar
-                  </Button>
+                  <Button variant="warning" size="sm" onClick={() => handleEdit(orden)} aria-label={`Editar orden ${orden.numeroOrden}`}>Editar</Button>
                   {orden.rutaPdf && (
-                    <Button
-                      variant="info"
-                      size="sm"
-                      className="w-100 w-sm-auto"
-                      onClick={() => handleVerPdf(orden)}
-                      title="Ver PDF"
-                    >
-                      Ver PDF
-                    </Button>
+                    <>
+                      <Button variant="info" size="sm" onClick={() => handleVerPdf(orden)} aria-label={`Ver PDF orden ${orden.numeroOrden}`}>Ver PDF</Button>
+                      <Button variant="secondary" size="sm" onClick={() => handleDescargarPdf(orden)} aria-label={`Descargar PDF orden ${orden.numeroOrden}`}>📄</Button>
+                    </>
                   )}
-                  {orden.rutaPdf && (
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      className="w-100 w-sm-auto"
-                      onClick={() => handleDescargarPdf(orden)}
-                      title="Descargar PDF"
-                    >
-                      📄
-                    </Button>
-                  )}
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    className="w-100 w-sm-auto"
-                    onClick={() => handleDelete(orden)}
-                  >
-                    Eliminar
-                  </Button>
+                  <Button variant="danger" size="sm" onClick={() => handleDelete(orden)} aria-label={`Eliminar orden ${orden.numeroOrden}`}>Eliminar</Button>
                 </div>
               )}
               className="small"
-              style={{ marginBottom: 0 }}
             />
           </div>
 
+          {/* Paginación */}
           <div className="d-flex justify-content-center my-3">
-            <PaginationCompact
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={setCurrentPage}
-            />
+            <PaginationCompact currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
           </div>
         </>
       )}
 
+      {/* Modal Form */}
       <OrdenCompraForm
         show={showModal}
         onHide={handleCloseForm}
         onSave={handleSaveForm}
         editId={editId}
-        onOrdenCreada={recargarOrdenes} // Recargar órdenes cuando se crea una nueva
+        onOrdenCreada={fetchOrdenes}
       />
     </div>
   );

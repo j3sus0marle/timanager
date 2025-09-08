@@ -1,8 +1,8 @@
-import { Request, Response } from 'express';
 import { execFile } from 'child_process';
-import { promisify } from 'util';
+import { Request, Response } from 'express';
 import * as fs from 'fs';
 import * as path from 'path';
+import { promisify } from 'util';
 import OrdenCompra from '../models/OrdenCompra';
 import Proveedor from '../models/Proveedor';
 import RazonSocial from '../models/RazonSocial';
@@ -260,8 +260,8 @@ export const procesarPdf = async (req: Request, res: Response) => {
 
       // Ejecutar el script Python
       console.log(`Ejecutando script: ${scriptPath} con archivo: ${rutaArchivo}`);
-      
-      const { stdout, stderr } = await execFileAsync('python', [scriptPath, rutaArchivo], {
+
+      const { stdout, stderr } = await execFileAsync('py', [scriptPath, rutaArchivo], {
         timeout: 30000 // 30 segundos de timeout
       });
 
@@ -835,7 +835,7 @@ export const crearOrdenDesdePdf = async (req: Request, res: Response) => {
       // Ejecutar el script Python para extraer datos del PDF
       console.log(`Ejecutando script: ${scriptPath} con archivo: ${rutaArchivo}`);
       
-      const { stdout, stderr } = await execFileAsync('python', [scriptPath, rutaArchivo], {
+      const { stdout, stderr } = await execFileAsync('py', [scriptPath, rutaArchivo], {
         timeout: 30000 // 30 segundos de timeout
       });
 
