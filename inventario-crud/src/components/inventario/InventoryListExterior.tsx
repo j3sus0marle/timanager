@@ -252,44 +252,53 @@ const InventoryListExterior: React.FC = () => {
   // Lógica para alta desde escaneo o manual
   const handleAlta = async (item: IInventoryItem | null, sn: string, cantidad: number, comentario: string) => {
     const token = localStorage.getItem('token');
-    if (item) {
-      try {
-        const original = items.find(i => i._id === item._id);
-        const cantidadOriginal = original ? original.cantidad : 0;
-        await axios.put(urlServer + item._id, {
-          ...item,
-          cantidad: item.cantidad, // La cantidad ya viene sumada desde AltaModal
+    if (!token) {
+      alert("Sesión expirada. Por favor, inicie sesión nuevamente.");
+      window.location.href = '/login';
+      return;
+    }
+
+    try {
+      if (item) {
+        // Crear solicitud de alta para item existente
+        const response = await axios.post("/api/inventory-requests", {
+          tipoMovimiento: "ENTRADA",
+          inventarioTipo: "EXTERIOR",
+          itemId: item._id,
+          cantidad,
+          motivoSolicitud: comentario,
+          numerosSerie: [sn]
         });
-        const cantidadAgregada = item.cantidad - cantidadOriginal;
-        if (cantidadAgregada > 0) {
-          await axios.post(urlMovimientos, {
-            itemId: item._id,
-            tipo: "entrada",
-            cantidad: cantidadAgregada,
-            fecha: new Date(),
-            comentario,
-          }, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
+
+        if (response.data) {
+          alert("Solicitud de alta enviada correctamente. Pendiente de aprobación por el administrador.");
         }
-        fetchItems();
-      } catch (error) {
-        console.error("Error al actualizar cantidad en alta exterior:", error);
+      } else {
+        // Para items nuevos, primero mostrar el modal de creación
+        setShowModal(true);
+        setNewItem({
+          descripcion: "",
+          marca: "",
+          modelo: "",
+          proveedor: "",
+          unidad: "PZA",
+          precioUnitario: 0,
+          cantidad: cantidad,
+          numerosSerie: [sn],
+          categorias: [],
+        });
       }
-    } else {
-      setShowModal(true);
-      setNewItem({
-        descripcion: "",
-        marca: "",
-        modelo: "",
-        proveedor: "",
-        unidad: "PZA",
-        precioUnitario: 0,
-        cantidad: cantidad,
-        numerosSerie: [sn],
-        categorias: [],
-      });
-      // Registrar movimiento de entrada para nuevo artículo se hace en handleSaveItem
+    } catch (error: any) {
+      console.error("Error al enviar solicitud de alta:", error);
+      if (error.response?.status === 401) {
+        localStorage.removeItem('token');
+        alert("No tiene autorización para realizar esta acción. Por favor, inicie sesión nuevamente.");
+        window.location.href = '/login';
+      } else if (error.response?.data?.message) {
+        alert(`Error: ${error.response.data.message}`);
+      } else {
+        alert("Error al procesar la solicitud. Por favor, intente nuevamente.");
+      }
     }
   };
 
