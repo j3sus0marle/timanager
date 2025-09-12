@@ -96,6 +96,16 @@ test("CRUD de Orden de Compra", async ({ page }) => {
   await page.getByRole("button", { name: /^Editar/ }).first().click();
   await page.getByRole("button", { name: /Cancelar/i }).click();
 
+  // --- Abrir PDF generado y tomar captura de pantalla ---
+  const [pdfPage] = await Promise.all([
+    page.waitForEvent('popup'),
+    page.getByRole('button', { name: /Ver PDF/i }).click(),
+  ]);
+  await pdfPage.waitForLoadState('domcontentloaded');
+  // Esperar 2 segundos para asegurar que el PDF se renderice
+  await pdfPage.waitForTimeout(5000);
+  await pdfPage.screenshot({ path: 'orden-compra-visualizacion.png', fullPage: true });
+
   // --- Eliminar ---
   await page.goto("http://localhost/ordenes-compra");
   page.once("dialog", (dialog) => dialog.accept());
@@ -104,10 +114,4 @@ test("CRUD de Orden de Compra", async ({ page }) => {
   // --- Verificar que ya no existe ---
   await expect(page.getByRole("cell", { name: /SYSCOM/i })).not.toBeVisible();
 
-  // --- Descargar PDF generado (si existe un botón/enlace de descarga) ---
-  const [download] = await Promise.all([
-    page.waitForEvent('download'),
-    page.getByRole('button', { name: /Descargar PDF/i }).click(), // Ajusta el selector según tu UI
-  ]);
-  await download.saveAs('orden-compra-descargada.pdf');
 });
