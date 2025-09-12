@@ -10,7 +10,7 @@ import SearchBar from '../common/SearchBar';
 import './Colaboradores.css';
 
 interface RazonSocial {
-  _id: string;
+  _id?: string;
   nombre: string;
 }
 
@@ -35,21 +35,14 @@ interface ColaboradorResponse extends ColaboradorBase {
 
 type Colaborador = ColaboradorCreate | ColaboradorResponse;
 
-// Función para convertir string a string limpio (solo dígitos)
+// Función auxiliar para validar si un objeto es RazonSocial
+function isRazonSocial(obj: any): obj is RazonSocial {
+  return obj && typeof obj === 'object' && '_id' in obj && 'nombre' in obj;
+}
+
+// Función para validar y formatear NSS
 const parseNSS = (value: string): string => {
   return value.replace(/\D/g, '').substring(0, 11);
-};
-
-// Función para validar el NSS
-const isValidNSS = (nss: string): boolean => {
-  const cleaned = nss.replace(/\D/g, '');
-  return cleaned.length === 11;
-};
-
-// Función para formatear el NSS
-const formatNSS = (nss: string): string => {
-  const cleaned = nss.replace(/\D/g, '');
-  return cleaned.padStart(11, '0');
 };
 
 const emptyColaborador: Colaborador = {
@@ -139,46 +132,27 @@ const ColaboradorList: React.FC = () => {
       };
 
       const camposFaltantes = Object.entries(camposRequeridos)
-        .filter(([key]) => !newColaborador[key as keyof Colaborador])
+        .filter(([key]) => {
+          const value = newColaborador[key as keyof Colaborador];
+          // Para el NSS, verificar que tenga exactamente 11 dígitos
+          if (key === 'nss') {
+            return !value || parseNSS(value as string).length !== 11;
+          }
+          return !value;
+        })
         .map(([_, label]) => label);
 
       if (camposFaltantes.length > 0) {
         toast.error(`Por favor completa los siguientes campos obligatorios: ${camposFaltantes.join(', ')}`);
         return;
       }
-
-      // Validar NSS
-      const nssLimpio = parseNSS(newColaborador.nss);
       
-      console.log('Validación NSS:', {
-        original: newColaborador.nss,
-        limpio: nssLimpio,
-        longitud: nssLimpio.length,
-        esValido: isValidNSS(nssLimpio)
-      });
-
-      if (!isValidNSS(nssLimpio)) {
-        toast.error('El NSS debe contener exactamente 11 dígitos numéricos');
-        return;
-      }
-      
-      // Si llegamos aquí, el NSS es válido
-      const nssFormateado = formatNSS(nssLimpio);
-      console.log('NSS formateado:', nssFormateado);
-      
-      // Actualizar el estado solo si es necesario
-      if (nssFormateado !== newColaborador.nss) {
-        console.log('Actualizando NSS en el estado');
-        setNewColaborador(prev => ({...prev, nss: nssFormateado}));
-        return; // Esperar a que el estado se actualice antes de continuar
-      }
-      
-      console.log('NSS válido - Continuando con el guardado');
       console.log('Datos del colaborador antes de enviar:', newColaborador);
       
-      // Crear el objeto de datos directamente
+      // Crear el objeto de datos directamente, asegurando que el NSS tenga el formato correcto
       const colaboradorData = {
         ...newColaborador,
+        nss: parseNSS(newColaborador.nss), // Asegurar formato correcto del NSS
         fechaAltaIMSS: new Date(newColaborador.fechaAltaIMSS).toISOString(),
         razonSocialId: newColaborador.razonSocialId
       };
@@ -232,11 +206,13 @@ const ColaboradorList: React.FC = () => {
         formData.append('nss', colaboradorData.nss);
         formData.append('puesto', colaboradorData.puesto);
         formData.append('fechaAltaIMSS', colaboradorData.fechaAltaIMSS);
-        // Asegurarse de que razonSocialId sea una cadena
+        // Asegurarse de que razonSocialId sea una cadena válida
         const razonSocialIdStr = typeof colaboradorData.razonSocialId === 'string' 
           ? colaboradorData.razonSocialId 
-          : colaboradorData.razonSocialId._id;
-        formData.append('razonSocialId', razonSocialIdStr);
+          : (colaboradorData.razonSocialId?._id || '');
+        if (razonSocialIdStr) {
+          formData.append('razonSocialId', razonSocialIdStr);
+        }
         formData.append('activo', String(colaboradorData.activo));
         formData.append('fotografia', selectedFile);
         
@@ -334,12 +310,49 @@ const ColaboradorList: React.FC = () => {
   };
 
   const handleEdit = (colaborador: Colaborador) => {
-    setEditId(colaborador._id || null);
-    setNewColaborador({
-      ...colaborador,
-      fechaAltaIMSS: format(new Date(colaborador.fechaAltaIMSS), 'yyyy-MM-dd')
-    });
-    setShowModal(true);
+    try {
+      console.log('Datos del colaborador a editar:', colaborador);
+      
+      setEditId(colaborador._id || null);
+      
+      // Manejo seguro de razonSocialId
+      let razonSocialIdValue = '';
+      if (colaborador.razonSocialId) {
+        if (typeof colaborador.razonSocialId === 'object' && colaborador.razonSocialId !== null) {
+          razonSocialIdValue = colaborador.razonSocialId._id || '';
+        } else {
+          razonSocialIdValue = colaborador.razonSocialId;
+        }
+      }
+
+      const colaboradorToEdit = {
+        ...colaborador,
+        razonSocialId: razonSocialIdValue
+      };
+      
+      // Manejo seguro de la fecha
+      let fechaFormateada;
+      try {
+        fechaFormateada = format(new Date(colaborador.fechaAltaIMSS), 'yyyy-MM-dd');
+      } catch (err) {
+        console.error('Error al formatear la fecha:', err);
+        fechaFormateada = new Date().toISOString().split('T')[0]; // Fecha actual como fallback
+      }
+
+      console.log('Datos preparados para edición:', {
+        ...colaboradorToEdit,
+        fechaAltaIMSS: fechaFormateada
+      });
+
+      setNewColaborador({
+        ...colaboradorToEdit,
+        fechaAltaIMSS: fechaFormateada
+      });
+      setShowModal(true);
+    } catch (err) {
+      console.error('Error al preparar edición del colaborador:', err);
+      toast.error('Error al cargar los datos del colaborador');
+    }
   };
 
   const columns: DataTableColumn<Colaborador>[] = [
@@ -467,7 +480,7 @@ const ColaboradorList: React.FC = () => {
           <Form>
             <Row className="mb-3">
               <Col md={6}>
-                <Form.Group controlId="nombre">
+                <Form.Group>
                   <Form.Label>Nombre</Form.Label>
                   <Form.Control 
                     id="nombre"
@@ -479,28 +492,27 @@ const ColaboradorList: React.FC = () => {
                 </Form.Group>
               </Col>
               <Col md={6}>
-                <Form.Group controlId="nss">
+                <Form.Group>
                   <Form.Label>NSS</Form.Label>
                   <Form.Control 
-                    id="nss"
                     type="text" 
                     inputMode="numeric"
                     pattern="\d{11}"
                     value={newColaborador.nss} 
                     onChange={e => {
-                      const value = parseNSS(e.target.value);
+                      let value = e.target.value.replace(/\D/g, '');
+                      if (value.length > 11) {
+                        value = value.substring(0, 11);
+                      }
                       setNewColaborador(prev => ({ ...prev, nss: value }));
                     }}
                     onPaste={e => {
                       e.preventDefault();
-                      const value = parseNSS(e.clipboardData.getData('text'));
-                      setNewColaborador(prev => ({ ...prev, nss: value }));
-                    }}
-                    onKeyPress={e => {
-                      // Permitir solo dígitos y limitar a 11
-                      if (!/\d/.test(e.key) || (newColaborador.nss.length >= 11 && e.key !== 'Backspace')) {
-                        e.preventDefault();
+                      let value = e.clipboardData.getData('text').replace(/\D/g, '');
+                      if (value.length > 11) {
+                        value = value.substring(0, 11);
                       }
+                      setNewColaborador(prev => ({ ...prev, nss: value }));
                     }}
                     maxLength={11}
                     placeholder="11 dígitos numéricos"
@@ -510,7 +522,7 @@ const ColaboradorList: React.FC = () => {
             </Row>
             <Row>
               <Col md={6} className="mb-3">
-                <Form.Group controlId="puesto">
+                <Form.Group>
                   <Form.Label>Puesto</Form.Label>
                   <Form.Control 
                     id="puesto"
@@ -521,7 +533,7 @@ const ColaboradorList: React.FC = () => {
                 </Form.Group>
               </Col>
               <Col md={6} className="mb-3">
-                <Form.Group controlId="fechaAltaIMSS">
+                <Form.Group>
                   <Form.Label>Fecha Alta IMSS</Form.Label>
                   <Form.Control 
                     id="fechaAltaIMSS"
@@ -534,15 +546,20 @@ const ColaboradorList: React.FC = () => {
             </Row>
             <Row>
               <Col md={6} className="mb-3">
-                <Form.Group controlId="razonSocialId">
+                <Form.Group>
                   <Form.Label>Razón Social</Form.Label>
                   <Form.Select 
                     id="razonSocialId"
-                    value={typeof newColaborador.razonSocialId === 'string' 
-                      ? newColaborador.razonSocialId 
-                      : newColaborador.razonSocialId._id
+                    value={typeof newColaborador.razonSocialId === 'object' 
+                      ? (newColaborador.razonSocialId as RazonSocial)._id 
+                      : (newColaborador.razonSocialId || '')
                     }
-                    onChange={e => setNewColaborador({ ...newColaborador, razonSocialId: e.target.value })}
+                    onChange={e => {
+                      setNewColaborador({ 
+                        ...newColaborador, 
+                        razonSocialId: e.target.value
+                      });
+                    }}
                   >
                     <option value="">Seleccione una razón social</option>
                     {razonesSociales.map(razon => (
@@ -554,7 +571,7 @@ const ColaboradorList: React.FC = () => {
                 </Form.Group>
               </Col>
               <Col md={6} className="mb-3">
-                <Form.Group controlId="fotografia">
+                <Form.Group>
                   <Form.Label>Fotografía</Form.Label>
                   {editId && newColaborador.fotografia && (
                     <div className="mb-2">
