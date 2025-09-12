@@ -42,8 +42,21 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
       res.status(401).json({ message: 'Credenciales inválidas' });
       return;
     }
-    // Cambiar la expiración a 2 horas para mayor seguridad
-    const token = jwt.sign({ username }, process.env.JWT_SECRET || 'secret', { expiresIn: '2h' });
+    // Incluir el id del usuario en el token
+    const token = jwt.sign(
+      { 
+        id: user._id,
+        username: user.username,
+        isAdmin: user.isAdmin 
+      }, 
+      process.env.JWT_SECRET || 'secret', 
+      { expiresIn: '2h' }
+    );
+    console.log('Token generado para:', {
+      username: user.username,
+      isAdmin: user.isAdmin,
+      id: user._id
+    });
     res.json({ token, username });
   } catch (err) {
     res.status(500).json({ message: 'Error al iniciar sesión' });
@@ -63,21 +76,36 @@ router.get('/verify-token', authMiddleware, async (req: Request, res: Response):
 // Middleware de autenticación
 import { NextFunction } from 'express';
 
-export function authMiddleware(req: Request, res: Response, next: NextFunction): void {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-  if (!token) {
-    res.status(401).json({ message: 'Token requerido' });
-    return;
-  }
-  jwt.verify(token, process.env.JWT_SECRET || 'secret', (err, user) => {
-    if (err) {
-      res.status(403).json({ message: 'Token inválido' });
+export async function authMiddleware(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    
+    if (!token) {
+      res.status(401).json({ message: 'Token requerido' });
       return;
     }
-    (req as any).user = user;
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret') as any;
+    const user = await User.findById(decoded.id);
+    
+    if (!user) {
+      res.status(401).json({ message: 'Usuario no encontrado' });
+      return;
+    }
+
+    // Agregar información del usuario a la request
+    (req as any).user = {
+      id: user._id,
+      username: user.username,
+      isAdmin: user.isAdmin
+    };
+    
     next();
-  });
+  } catch (err) {
+    console.error('Error en autenticación:', err);
+    res.status(403).json({ message: 'Token inválido' });
+  }
 }
 
 // POST /update-user

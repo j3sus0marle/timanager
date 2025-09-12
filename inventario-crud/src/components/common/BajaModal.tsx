@@ -178,14 +178,19 @@ const BajaModal: React.FC<BajaModalProps> = ({ show, onHide, onBaja, items }) =>
               />
             </Form.Group>
             <Form.Group controlId="comentarioBaja" className="mt-2">
-              <Form.Label>Comentario (motivo de la baja)</Form.Label>
+              <Form.Label>Comentario (motivo de la baja) *</Form.Label>
               <Form.Control
                 as="textarea"
                 rows={2}
                 value={comentario}
                 onChange={e => setComentario(e.target.value)}
-                placeholder="Motivo de la baja..."
+                placeholder="Ingrese el motivo de la baja (requerido)"
+                required
+                isInvalid={foundItem && !comentario.trim()}
               />
+              <Form.Control.Feedback type="invalid">
+                El motivo de la baja es requerido
+              </Form.Control.Feedback>
             </Form.Group>
           </div>
         )}
@@ -194,10 +199,23 @@ const BajaModal: React.FC<BajaModalProps> = ({ show, onHide, onBaja, items }) =>
         <Button variant="secondary" onClick={handleClose}>
           Cancelar
         </Button>
+        {/* Debug info */}
+        <div className="text-muted small mb-2">
+          Estado del formulario:
+          <br/>
+          - Item encontrado: {foundItem ? 'Sí' : 'No'}
+          <br/>
+          - Cantidad válida: {cantidad >= 1 && cantidad <= (foundItem?.cantidad || 1) ? 'Sí' : 'No'} ({cantidad})
+          <br/>
+          - Comentario válido: {comentario.trim() ? 'Sí' : 'No'}
+        </div>
         <Button
           variant="primary"
           onClick={handleBaja}
-          disabled={!foundItem || cantidad < 1 || cantidad > (foundItem?.cantidad || 1)}
+          disabled={!foundItem || 
+                   cantidad < 1 || 
+                   cantidad > (foundItem?.cantidad || 1) ||
+                   !comentario.trim()}
         >
           OK
         </Button>

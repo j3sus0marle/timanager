@@ -19,8 +19,14 @@ export default function Login({ onLogin }: { onLogin: (token: string, username: 
         token: string;
         username: string;
       }
+      console.log('Intentando iniciar sesión con:', username);
       const res = await axios.post<LoginResponse>(`${API_URL}login`, { username, password });
+      console.log('Respuesta del servidor:', {
+        token: res.data.token ? 'Token recibido' : 'No token',
+        username: res.data.username
+      });
       onLogin(res.data.token, res.data.username);
+      console.log('Token guardado en localStorage:', localStorage.getItem('token'));
       navigate('/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Error al iniciar sesión');

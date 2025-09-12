@@ -29,6 +29,7 @@ import { authMiddleware } from './routes/auth';
 import colaboradoresRoutes from './routes/colaboradores';
 import documentosRoutes from './routes/documentos';
 import herramientasRoutes from './routes/herramientas';
+import inventoryRequestsRoutes from './routes/inventoryRequests';
 
 dotenv.config();
 const app: Application = express();
@@ -60,6 +61,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/colaboradores', colaboradoresRoutes);
 app.use('/api/documentos', documentosRoutes);
 app.use('/api/herramientas', herramientasRoutes);
+app.use('/api/inventory-requests', inventoryRequestsRoutes);
 
 app.post("/api/notificar-guias", async (req, res) => {
   try {

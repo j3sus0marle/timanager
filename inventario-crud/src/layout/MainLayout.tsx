@@ -76,6 +76,7 @@ const MainLayout: React.FC<{ username?: string | null, onLogout?: () => void }> 
         { path: "/inventario", label: "Inventario Interior", icon: <FaWarehouse size={14} /> },
         { path: "/inventarioExterior", label: "Inventario Exterior", icon: <FaWarehouse size={14} /> },
         { path: "/herramientas", label: "Herramientas", icon: <FaTools size={14} /> },
+        { path: "/solicitudes-inventario", label: "Solicitudes", icon: <FaFileAlt size={14} /> },
       ],
     },
     {

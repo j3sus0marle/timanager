@@ -199,26 +199,53 @@ const InventoryListExterior: React.FC = () => {
     setShowModal(true);
   };
 
-  // Lógica para realizar la baja
+  // Lógica para enviar solicitud de baja
   const handleBaja = async (item: IInventoryItem, cantidad: number, comentario: string) => {
-    const token = localStorage.getItem('token');
     try {
-      await axios.put(urlServer + item._id, {
-        ...item,
-        cantidad: item.cantidad - cantidad,
-      });
-      await axios.post(urlMovimientos, {
+      // Verificar si hay token
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert("Sesión expirada. Por favor, inicie sesión nuevamente.");
+        window.location.href = '/login';
+        return;
+      }
+
+      console.log('Token:', token); // Para debugging
+
+      // Enviar solicitud de baja (no requiere autenticación)
+      const response = await axios.post("/api/inventory-requests", {
+        tipoMovimiento: "SALIDA",
+        inventarioTipo: "EXTERIOR",
         itemId: item._id,
-        tipo: "salida",
         cantidad,
-        fecha: new Date(),
-        comentario,
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
+        motivoSolicitud: comentario,
+        numerosSerie: [] // Si necesitas incluir números de serie específicos, agrégalos aquí
       });
-      fetchItems();
-    } catch (error) {
-      console.error("Error al realizar la baja exterior:", error);
+      
+      if (response.data) {
+        alert("Solicitud de baja enviada correctamente. Pendiente de aprobación por el administrador.");
+      }
+      
+    } catch (error: any) {
+      console.error("Error al enviar solicitud de baja:", error);
+      console.error("Detalles del error:", {
+        status: error.response?.status,
+        message: error.response?.data?.message,
+        headers: error.response?.headers
+      });
+      
+      // Manejar diferentes tipos de errores
+      if (error.response?.status === 401) {
+        localStorage.removeItem('token'); // Limpiar el token si es inválido
+        alert("No tiene autorización para realizar esta acción. Por favor, inicie sesión nuevamente.");
+        window.location.href = '/login';
+      } else if (error.response?.data?.message) {
+        alert(`Error: ${error.response.data.message}`);
+      } else if (error.code === 'ERR_NETWORK') {
+        alert("Error de conexión con el servidor. Por favor, verifique su conexión e intente nuevamente.");
+      } else {
+        alert("Error al enviar la solicitud de baja. Por favor, intente nuevamente.");
+      }
     }
   };
 
