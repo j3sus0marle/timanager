@@ -2,6 +2,7 @@
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import "./MainLayout.css";
 import { useState, useEffect } from "react";
+import { jwtDecode } from "jwt-decode";
 import { 
   FaBars, 
   FaCog, 
@@ -42,6 +43,9 @@ const MainLayout: React.FC<{ username?: string | null, onLogout?: () => void }> 
 
     return () => clearTimeout(timer);
   }, [location.pathname]);
+  const token = localStorage.getItem('token');
+  const isAdmin = token ? (jwtDecode(token) as any).isAdmin : false;
+
   const groupedNavItems = [
     // Dashboard sin agrupar
     {
@@ -51,6 +55,14 @@ const MainLayout: React.FC<{ username?: string | null, onLogout?: () => void }> 
         { path: "/dashboard", label: "Dashboard", icon: <FaTachometerAlt size={14} /> },
       ],
     },
+    // Solicitudes para admin
+    ...(isAdmin ? [{
+      label: "Solicitudes",
+      icon: <FaFileAlt size={16} />,
+      items: [
+        { path: "/solicitudes-inventario", label: "Solicitudes", icon: <FaFileAlt size={14} /> },
+      ],
+    }] : []),
     // Guías sin agrupar
     {
       label: "Guías",
@@ -76,7 +88,6 @@ const MainLayout: React.FC<{ username?: string | null, onLogout?: () => void }> 
         { path: "/inventario", label: "Inventario Interior", icon: <FaWarehouse size={14} /> },
         { path: "/inventarioExterior", label: "Inventario Exterior", icon: <FaWarehouse size={14} /> },
         { path: "/herramientas", label: "Herramientas", icon: <FaTools size={14} /> },
-        { path: "/solicitudes-inventario", label: "Solicitudes", icon: <FaFileAlt size={14} /> },
       ],
     },
     {

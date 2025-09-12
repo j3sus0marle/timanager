@@ -14,17 +14,18 @@ const InventoryRequests: React.FC = () => {
   const token = localStorage.getItem('token');
   const isAdmin = token ? (jwtDecode(token) as any).isAdmin : false;
 
-  const items = [
+  const items = isAdmin ? [
+    {
+      key: '1',
+      label: 'Solicitudes Pendientes',
+      children: <PendingRequestsList />
+    }
+  ] : [
     {
       key: '1',
       label: 'Mis Solicitudes',
       children: <MyRequestsList />
-    },
-    ...(isAdmin ? [{
-      key: '2',
-      label: 'Solicitudes Pendientes',
-      children: <PendingRequestsList />
-    }] : [])
+    }
   ];
 
   return (
