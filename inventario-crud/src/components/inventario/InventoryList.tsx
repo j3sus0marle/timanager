@@ -203,25 +203,40 @@ const Inventario: React.FC = () => {
 
   // Lógica para realizar la baja
   const handleBaja = async (item: IInventoryItem, cantidad: number, comentario: string) => {
-    const token = localStorage.getItem('token');
     try {
-      await axios.put(urlServer + item._id, {
-        ...item,
-        cantidad: item.cantidad - cantidad,
-      });
-      // Registrar movimiento de salida
-      await axios.post(urlMovimientos, {
+      // Verificar si hay token
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert("Sesión expirada. Por favor, inicie sesión nuevamente.");
+        window.location.href = '/login';
+        return;
+      }
+
+      // Enviar solicitud de baja
+      const response = await axios.post("/api/inventory-requests", {
+        tipoMovimiento: "SALIDA",
+        inventarioTipo: "INTERIOR",
         itemId: item._id,
-        tipo: "salida",
         cantidad,
-        fecha: new Date(),
-        comentario,
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
+        motivoSolicitud: comentario,
+        numerosSerie: [] // Si necesitas incluir números de serie específicos, agrégalos aquí
       });
-      fetchItems();
-    } catch (error) {
-      console.error("Error al realizar la baja:", error);
+      
+      if (response.data) {
+        alert("Solicitud de baja enviada correctamente. Pendiente de aprobación por el administrador.");
+      }
+      
+    } catch (error: any) {
+      console.error("Error al enviar solicitud de baja:", error);
+      if (error.response?.status === 401) {
+        localStorage.removeItem('token');
+        alert("No tiene autorización para realizar esta acción. Por favor, inicie sesión nuevamente.");
+        window.location.href = '/login';
+      } else if (error.response?.data?.message) {
+        alert(`Error: ${error.response.data.message}`);
+      } else {
+        alert("Error al enviar la solicitud de baja. Por favor, intente nuevamente.");
+      }
     }
   };
 
