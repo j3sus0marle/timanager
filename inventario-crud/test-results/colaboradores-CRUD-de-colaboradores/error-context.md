@@ -1,0 +1,101 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - region "Notifications Alt+T"
+    - generic [ref=e3]:
+      - navigation [ref=e4]:
+        - generic [ref=e6]:
+          - generic [ref=e7]:
+            - img [ref=e8]
+            - generic [ref=e10]: oleal
+          - button "Configuración de usuario" [ref=e11] [cursor=pointer]:
+            - img [ref=e12] [cursor=pointer]
+        - heading "Menú" [level=4] [ref=e14]
+        - list [ref=e15]:
+          - listitem [ref=e16]:
+            - link "Dashboard" [ref=e17] [cursor=pointer]:
+              - /url: /dashboard
+              - img [ref=e18] [cursor=pointer]
+              - generic [ref=e20] [cursor=pointer]: Dashboard
+          - listitem [ref=e21]:
+            - link "Guías" [ref=e22] [cursor=pointer]:
+              - /url: /guias
+              - img [ref=e23] [cursor=pointer]
+              - generic [ref=e25] [cursor=pointer]: Guías
+          - listitem [ref=e26]:
+            - button "Proyectos ▼" [ref=e28] [cursor=pointer]:
+              - generic [ref=e29] [cursor=pointer]:
+                - img [ref=e30] [cursor=pointer]
+                - generic [ref=e32] [cursor=pointer]: Proyectos
+              - generic [ref=e33] [cursor=pointer]: ▼
+          - listitem [ref=e34]:
+            - button "Inventario ▼" [ref=e36] [cursor=pointer]:
+              - generic [ref=e37] [cursor=pointer]:
+                - img [ref=e38] [cursor=pointer]
+                - generic [ref=e40] [cursor=pointer]: Inventario
+              - generic [ref=e41] [cursor=pointer]: ▼
+          - listitem [ref=e42]:
+            - button "Bases de Datos ▼" [ref=e44] [cursor=pointer]:
+              - generic [ref=e45] [cursor=pointer]:
+                - img [ref=e46] [cursor=pointer]
+                - generic [ref=e48] [cursor=pointer]: Bases de Datos
+              - generic [ref=e49] [cursor=pointer]: ▼
+        - button "Cerrar sesión" [ref=e51] [cursor=pointer]
+      - main [ref=e52]:
+        - generic [ref=e55]:
+          - generic [ref=e56]:
+            - heading "Colaboradores" [level=2] [ref=e57]
+            - button "Documentos" [ref=e59] [cursor=pointer]:
+              - img [ref=e60] [cursor=pointer]
+              - text: Documentos
+          - generic [ref=e62]:
+            - generic [ref=e63]:
+              - textbox "Buscar por número de empleado, nombre, NSS o puesto..." [ref=e64]
+              - button "Agregar Colaborador" [ref=e65] [cursor=pointer]
+            - table [ref=e67]:
+              - rowgroup [ref=e68]:
+                - row "No. Empleado Foto Nombre NSS Puesto Fecha Alta IMSS Razón Social Acciones" [ref=e69]:
+                  - cell "No. Empleado" [ref=e70]
+                  - cell "Foto" [ref=e71]
+                  - cell "Nombre" [ref=e72]
+                  - cell "NSS" [ref=e73]
+                  - cell "Puesto" [ref=e74]
+                  - cell "Fecha Alta IMSS" [ref=e75]
+                  - cell "Razón Social" [ref=e76]
+                  - cell "Acciones" [ref=e77]
+              - rowgroup
+  - dialog [active] [ref=e79]:
+    - generic [ref=e80]:
+      - generic [ref=e81]:
+        - generic [ref=e82]: Agregar Colaborador
+        - button "Close" [ref=e83] [cursor=pointer]
+      - generic [ref=e85]:
+        - generic [ref=e86]:
+          - generic [ref=e88]:
+            - generic [ref=e89]: Nombre
+            - textbox [ref=e90]
+          - generic [ref=e92]:
+            - generic [ref=e93]: NSS
+            - textbox "11 dígitos numéricos" [ref=e94]
+        - generic [ref=e95]:
+          - generic [ref=e97]:
+            - generic [ref=e98]: Puesto
+            - textbox [ref=e99]
+          - generic [ref=e101]:
+            - generic [ref=e102]: Fecha Alta IMSS
+            - textbox [ref=e103]
+        - generic [ref=e104]:
+          - generic [ref=e106]:
+            - generic [ref=e107]: Razón Social
+            - combobox [ref=e108]:
+              - option "Seleccione una razón social" [selected]
+              - option "usuariorazonsocial"
+          - generic [ref=e110]:
+            - generic [ref=e111]: Fotografía
+            - button "Choose File" [ref=e112] [cursor=pointer]
+      - generic [ref=e113]:
+        - button "Cancelar" [ref=e114] [cursor=pointer]
+        - button "Guardar" [ref=e115] [cursor=pointer]
+```
